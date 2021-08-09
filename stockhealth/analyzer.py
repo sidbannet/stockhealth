@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 #
 # StockHealth market data analyzer
-# https://github.com/sidbannet
+# [StockHealth GitRepo](https://github.com/sidbannet/stockhealth)
 #
-# Copyright 2021 Siddhartha Banerjee
+# Copyright 2021 [Siddhartha Banerjee](mailto:sidban@uwalumni.com)
 #
 
 import yfinance as yf

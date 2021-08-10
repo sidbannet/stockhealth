@@ -8,6 +8,7 @@
 #
 
 import matplotlib.pyplot as plt
+import pandas as pd
 import yfinance as yf
 
 
@@ -31,14 +32,16 @@ class TimeSeries:
         df['Increase in Real Worth [%]'] = df['Real Worth'].diff(periods=1) / \
             df['Real Worth'].shift(periods=1) * 100
 
-    def trends(
+    def technical(
             self,
-            window: int = int(10),
+            window: int = int(14),
             key_param: str = 'Close',
+            volume_scale: str = 'log',
+            ema: bool = True,
     ) -> tuple:
-        """Get the technical analysis trends."""
-        fig = plt.figure('Trends analysis: ' + self.__symbol)
-        axs = fig.subplots(nrows=2, ncols=1, sharex=True)
+        """Get the technical analysis."""
+        fig = plt.figure('Technical analysis: ' + self.__symbol)
+        axs = fig.subplots(nrows=3, ncols=1, sharex=True)
         df = self.__history
         df[key_param].rolling(
             window=window, closed='right'
@@ -69,14 +72,52 @@ class TimeSeries:
                 ymax=trend_id['High'],
                 color=color_id,
             )
-        axs[0].legend(['mean', 'max', 'min'])
-        axs[0].set_title('Value')
+        axs[0].legend(['Means', 'Highs', 'Lows'])
+        axs[0].set_title('Charts')
         axs[0].set_ylabel('Value [$]')
         df['Volume'].plot(
-            ax=axs[1], style='-', color='k', grid=True, title='Volume',
+            ax=axs[1], style='-', color='k', grid=True, title='Size',
         )
         axs[1].set_ylabel('Volume [-]')
-        axs[1].set_yscale('log')
+        axs[1].set_yscale(volume_scale)
+        (df['Close'] * 0 + 70).plot(
+            style='--', color='r', ax=axs[2], label='SELL',
+        )
+        (df['Close'] * 0 + 30).plot(
+            style='--', color='b', ax=axs[2], label='BUY',
+        )
+        self.rsi(periods=window, ema=ema).plot(
+            style='-', color='k', ax=axs[2], label='RSI',
+            title='Over trading indicator', grid=True,
+        )
+        axs[2].set_ylabel('RSI')
+        axs[2].legend()
         _ = [ax.grid(True) for ax in axs]
-        fig.suptitle('Trends analysis')
+        fig.suptitle('Technical analysis')
         return fig, axs
+
+    def rsi(
+            self,
+            periods: int = int(14),
+            ema: bool = True,
+    ) -> pd.Series:
+        """
+        Returns a pd.Series with the relative strength index.
+        """
+        df = self.__history
+        close_delta = df['Close'].diff()
+        # Make two series: one for lower closes and one for higher closes
+        up = close_delta.clip(lower=0)
+        down = -1 * close_delta.clip(upper=0)
+        if ema:
+            # Use exponential moving average
+            ma_up = up.ewm(com=periods - 1, adjust=True,
+                           min_periods=periods).mean()
+            ma_down = down.ewm(com=periods - 1, adjust=True,
+                               min_periods=periods).mean()
+        else:
+            # Use simple moving average
+            ma_up = up.rolling(window=periods, adjust=False).mean()
+            ma_down = down.rolling(window=periods, adjust=False).mean()
+        rsi = 100 - (100 / (1 + ma_up / ma_down))
+        return rsi

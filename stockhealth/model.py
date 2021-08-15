@@ -45,8 +45,12 @@ class BlackScholes:
         d2 = d1 - sigma * sqrt(T)
         self.__d1 = d1
         self.__d2 = d2
-        self.__call = S * norm.cdf(d1) - K * exp(-r * T) * norm.cdf(d2)
-        self.__put = K * exp(-r * T) - S + self.__call
+        self.__call = exp(-r * T) * (
+            exp(r * T) * S * norm.cdf(d1) - K * norm.cdf(d2)
+        )
+        self.__put = exp(-r * T) * (
+            K * norm.cdf(-d2) - exp(r * T) * S * norm.cdf(-d1)
+        )
         call_delta = norm.cdf(d1) * exp(-q * T)
         gamma = norm.pdf(d1) / (S * sigma * sqrt(T)) * exp(-q * T)
         vega = 0.01 * (S * norm.pdf(d1) * sqrt(T)) * exp(-q * T)

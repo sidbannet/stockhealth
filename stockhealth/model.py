@@ -7,7 +7,6 @@
 # Copyright 2021 [Siddhartha Banerjee](mailto:sidban@uwalumni.com)
 #
 
-from math import log, sqrt, exp
 from scipy.stats import norm
 import numpy as np
 
@@ -18,103 +17,68 @@ class BlackScholes:
 
     def __init__(
             self,
-            S: float = np.nan,
-            K: float = np.nan,
-            T: float = np.nan,
-            r: float = np.nan,
-            sigma: float = np.nan,
-            q: float = float(0.0),
+            S: np.float = np.nan,
+            K: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.float(0.0),
     ):
         """Instantiate the Black-Scholes model for options price.
         :type S: Spot price of the underlying asset
         :type K: Strike price
         :type T: Time to maturity (unit less fraction of one year)
         :type r: Risk free interest
-        :type sigma: Volaility of the underlying asset
         :type q: Annual dividend yeild
         """
         self.S = S
         self.K = K
         self.T = T
         self.r = r
-        self.sigma = sigma
         self.q = q
-        d1 = (log(S / K) + (r - q + sigma ** 2 / 2.0) * T) / (sigma * sqrt(T))
-        d2 = d1 - sigma * sqrt(T)
-        self.__d1 = d1
-        self.__d2 = d2
-        self.__call = S * norm.cdf(d1) - K * norm.cdf(d2) * exp(-r * T)
-        self.__put = exp(-r * T) * K * norm.cdf(-d2) - S * norm.cdf(-d1)
-        call_delta = norm.cdf(d1) * exp(-q * T)
-        gamma = norm.pdf(d1) / (S * sigma * sqrt(T)) * exp(-q * T)
-        vega = 0.01 * (S * norm.pdf(d1) * sqrt(T)) * exp(-q * T)
-        call_theta = 0.01 * (
-                - exp(-q * T) * (S * norm.pdf(d1) * sigma) / (2 * sqrt(T)) -
-                r * K * exp(-r * T) * norm.cdf(d2) +
-                q * S * exp(-q * T) * norm.cdf(d1)
+        self.__d1 = lambda sigma: (
+            (
+                np.log(self.S / self.K) +
+                (self.r - self.q + sigma ** 2 / 2.0) * self.T
+            ) / (sigma * np.sqrt(self.T))
         )
-        call_rho = 0.01 * (K * T * exp(-r * T) * norm.cdf(d2))
-        put_delta = - norm.cdf(-d1) * exp(-q * T)
-        put_theta = 0.01 * (
-            - exp(-q * T) * (S * norm.pdf(d1) * sigma) / (2 * sqrt(T)) +
-            r * K * exp(- r * T) * norm.cdf(-d2) -
-            q * S * exp(-q * T) * norm.cdf(-d1)
+        self.__d2 = lambda sigma: (
+            (
+                np.log(self.S / self.K) +
+                (self.r - self.q + sigma ** 2 / 2.0) * self.T
+            ) / (sigma * np.sqrt(self.T)) - (sigma * np.sqrt(self.T))
         )
-        put_rho = 0.01 * (-K * T * exp(-r * T) * norm.cdf(-d2))
-        self.__greeks = {
-            'call': {
-                'delta': call_delta,
-                'gamma': gamma,
-                'theta': call_theta,
-                'vega': vega,
-                'rho': call_rho,
-            },
-            'put': {
-                'delta': put_delta,
-                'gamma': gamma,
-                'theta': put_theta,
-                'vega': vega,
-                'rho': put_rho,
-            },
-        }
 
-    @property
-    def greeks_(self) -> dict:
-        return self.__greeks
-
-    @property
-    def value_(self) -> dict:
-        return {
-            'call': self.__call,
-            'put': self.__put,
-        }
-
-    def call_implied_volatility__(
+    def _call_value(
             self,
-            price: np.float = np.nan,
+            sigma: np.float = np.nan,
     ) -> np.float:
-        """Expected future volatility of underlying within time to maturity."""
-        sigma = 0.001
-        while sigma < 1:
-            price_implied = self.S * \
-                norm.cdf(self.__d1) - self.K * exp(-self.r * self.T) * \
-                norm.cdf(self.__d2)
-            if np.abs(price - price_implied) < 0.001:
-                return sigma
-            sigma += 0.001
-        return np.nan
+        """European Call option value given sigma."""
+        S = self.S
+        K = self.K
+        T = self.T
+        r = self.r
+        return (
+            S * norm.cdf(
+                self.__d1(sigma=sigma)
+            ) -
+            K * norm.cdf(
+                self.__d2(sigma=sigma)
+            ) * np.exp(-r * T)
+        )
 
-    def put_implied_volatility(
+    def _put_value(
             self,
-            price: np.float = np.nan,
+            sigma: np.float = np.nan,
     ) -> np.float:
-        """Expected future volatiloty of underlying within time to maturity."""
-        sigma = 0.001
-        while sigma < 1:
-            price_implied = self.K * exp(-self.r * self.T) - \
-                            self.S + \
-                            self.__call
-            if np.abs(price - price_implied) < 0.001:
-                return sigma
-            sigma += 0.001
-        return np.nan
+        """European Put option valuation given sigma."""
+        S = self.S
+        K = self.K
+        T = self.T
+        r = self.r
+        return (
+            np.exp(-r * T) * K * norm.cdf(
+                - self.__d2(sigma=sigma)
+            ) - S * norm.cdf(
+                - self.__d1(sigma=sigma)
+            )
+        )

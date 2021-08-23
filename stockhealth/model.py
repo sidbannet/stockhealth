@@ -47,6 +47,8 @@ class BlackScholes:
                 (self.r - self.q + sigma ** 2 / 2.0) * self.T
             ) / (sigma * np.sqrt(self.T)) - (sigma * np.sqrt(self.T))
         )
+        self.__call_values = np.vectorize(self._call_value)
+        self.__put_values = np.vectorize(self._put_value)
 
     def _call_value(
             self,
@@ -82,3 +84,21 @@ class BlackScholes:
                 - self.__d1(sigma=sigma)
             )
         )
+
+    def _sigma_call(
+            self,
+            price: np.float = np.nan,
+    ) -> np.float:
+        """Implied sigma given call option value."""
+        sigma_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
+        return sigma_[
+            (np.abs(self.__call_values(sigma=sigma_) - price)).argmin()]
+
+    def _sigma_put(
+            self,
+            price: np.float = np.nan,
+    ) -> np.float:
+        """Implied sigma given put option value."""
+        sigma_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
+        return sigma_[
+            (np.abs(self.__put_values(sigma=sigma_) - price)).argmin()]

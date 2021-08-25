@@ -235,3 +235,15 @@ class BlackScholes:
                 'extrinsic': __put_extrinsic,
             },
         }
+
+    def greeks(
+            self,
+            call_price: np.float = np.nan,
+            put_price: np.float = np.nan,
+    ) -> dict:
+        """Get sigmas and calculate greeks for given options price."""
+        return {
+            'call': self._value(sigma=self._sigma_call(price=call_price))[
+                'call'],
+            'put': self._value(sigma=self._sigma_put(price=put_price))['put'],
+        }

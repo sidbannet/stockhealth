@@ -262,6 +262,7 @@ class StochasticVolatility:
             epsilon: np.float = np.nan,
             kappa: np.float = np.nan,
     ):
+        """Instantiate the SV Model."""
         self.S = S0
         self.mew = mew
         self.sigma = sigma
@@ -274,7 +275,7 @@ class StochasticVolatility:
             self,
             dt: np.float = np.float(1 / 365),
     ) -> None:
-        """Update states in proceed forward in time with random walk."""
+        """Update states and proceed forward in time with random walk."""
         dW = [
             np.random.normal(loc=0, scale=np.sqrt(dt)),
             np.random.normal(loc=0, scale=np.sqrt(dt)),
@@ -299,7 +300,7 @@ class SimpleStochastic(StochasticVolatility):
             S0: np.float = np.nan,
             sigma: np.float = np.nan
     ):
-        """Instantiate the SV model."""
+        """Instantiate the Simple Stochastic model."""
         super().__init__(
-            mew=mew, S0=S0, sigma=sigma, kappa=0, beta=0, epsilon=0
+            mew=mew, S0=S0, sigma=sigma, kappa=0, beta=0, epsilon=0,
         )

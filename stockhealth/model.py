@@ -247,3 +247,30 @@ class BlackScholes:
                 'call'],
             'put': self._value(sigma=self._sigma_put(price=put_price))['put'],
         }
+
+
+# noinspection PyPep8Naming
+class SimpleStochastic:
+    """
+    Stochastic log-normal time dynamics model with constant volatility.
+    """
+
+    def __init__(
+            self,
+            mew: np.float = np.nan,
+            S0: np.float = np.nan,
+            sigma: np.float = np.nan,
+    ):
+        """Instantiate the SV model."""
+        self.mew = mew
+        self.sigma = sigma
+        self.S = S0
+
+    def _update_time(
+            self,
+            dt: np.float = np.float(1/365),
+    ) -> None:
+        """Update spot price in time."""
+        dS = self.mew * self.S * dt + \
+            self.sigma * self.S * np.random.normal(loc=0, scale=np.sqrt(dt))
+        self.S += dS

@@ -247,3 +247,60 @@ class BlackScholes:
                 'call'],
             'put': self._value(sigma=self._sigma_put(price=put_price))['put'],
         }
+
+
+# noinspection PyPep8Naming
+class StochasticVolatility:
+    """Log-normal Stochastic Volatility Model."""
+
+    def __init__(
+            self,
+            mew: np.float = np.nan,
+            S0: np.float = np.nan,
+            sigma: np.float = np.nan,
+            beta: np.float = np.nan,
+            epsilon: np.float = np.nan,
+            kappa: np.float = np.nan,
+    ):
+        """Instantiate the SV Model."""
+        self.S = S0
+        self.mew = mew
+        self.sigma = sigma
+        self.beta = beta / sigma
+        self.epsilon = epsilon / sigma
+        self.kappa = kappa
+        self.Y = 0
+
+    def update(
+            self,
+            dt: np.float = np.float(1 / 365),
+    ) -> None:
+        """Update states and proceed forward in time with random walk."""
+        dW = [
+            np.random.normal(loc=0, scale=np.sqrt(dt)),
+            np.random.normal(loc=0, scale=np.sqrt(dt)),
+        ]
+        self.S += self.mew * self.S * dt + \
+            self.sigma * (1 + self.Y) * self.S * dW[0]
+        self.Y += \
+            - self.kappa * self.Y * dt \
+            + self.beta * self.sigma * (1 + self.Y) * dW[0] \
+            + self.epsilon * dW[1]
+
+
+# noinspection PyPep8Naming
+class SimpleStochastic(StochasticVolatility):
+    """
+    Stochastic log-normal time dynamics model with constant volatility.
+    """
+
+    def __init__(
+            self,
+            mew: np.float = np.nan,
+            S0: np.float = np.nan,
+            sigma: np.float = np.nan
+    ):
+        """Instantiate the Simple Stochastic model."""
+        super().__init__(
+            mew=mew, S0=S0, sigma=sigma, kappa=0, beta=0, epsilon=0,
+        )

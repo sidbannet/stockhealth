@@ -47,3 +47,4 @@ class MonteCarlo:
             }
         ).set_index('t')
         self.__solved = True
+        # //todo: reset the model after the solver

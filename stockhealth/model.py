@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# StockHealth market data analyzer
+# StockHealth models
 # [StockHealth GitRepo](https://github.com/sidbannet/stockhealth)
 #
 # Copyright 2021 [Siddhartha Banerjee](mailto:sidban@uwalumni.com)
@@ -270,6 +270,7 @@ class StochasticVolatility:
         self.epsilon = epsilon / sigma
         self.kappa = kappa
         self.Y = 0
+        # //todo: assert if the model is setup correctly
 
     def update(
             self,

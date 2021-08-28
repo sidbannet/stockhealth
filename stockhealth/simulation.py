@@ -28,15 +28,11 @@ class MonteCarlo:
         self.dt = dt
         self.__solved = False
         self.S = pd.DataFrame(
-            data=None,
-            index=[],
-            columns=list(range(model.S.size)),
-        )
+            data=self._mdl.S, columns=[self._mdl.t],
+        ).T
         self.V = pd.DataFrame(
-            data=None,
-            index=[],
-            columns=list(range(model.volatility.size)),
-        )
+            data=self._mdl.volatility, columns=[self._mdl.t],
+        ).T
         self.__name_dataframe_index(name='t')
         # //todo: assert if the simulation is setup correctly
 

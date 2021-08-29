@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# StockHealth market data analyzer
+# StockHealth models
 # [StockHealth GitRepo](https://github.com/sidbannet/stockhealth)
 #
 # Copyright 2021 [Siddhartha Banerjee](mailto:sidban@uwalumni.com)
@@ -261,15 +261,20 @@ class StochasticVolatility:
             beta: np.float = np.nan,
             epsilon: np.float = np.nan,
             kappa: np.float = np.nan,
+            number_of_instances: np.int = np.int(100000),
     ):
         """Instantiate the SV Model."""
-        self.S = S0
+        self.S = S0 * np.ones(shape=number_of_instances)
         self.mew = mew
         self.sigma = sigma
         self.beta = beta / sigma
         self.epsilon = epsilon / sigma
         self.kappa = kappa
-        self.Y = 0
+        self.Y = np.float(0) + np.zeros(shape=number_of_instances)
+        self.t = np.float(0)
+        self.__N = number_of_instances
+        self.__S0 = S0
+        # //todo: assert if the model is setup correctly
 
     def update(
             self,
@@ -277,8 +282,8 @@ class StochasticVolatility:
     ) -> None:
         """Update states and proceed forward in time with random walk."""
         dW = [
-            np.random.normal(loc=0, scale=np.sqrt(dt)),
-            np.random.normal(loc=0, scale=np.sqrt(dt)),
+            np.random.normal(loc=0, scale=np.sqrt(dt), size=self.__N),
+            np.random.normal(loc=0, scale=np.sqrt(dt), size=self.__N),
         ]
         self.S += self.mew * self.S * dt + \
             self.sigma * (1 + self.Y) * self.S * dW[0]
@@ -286,6 +291,18 @@ class StochasticVolatility:
             - self.kappa * self.Y * dt \
             + self.beta * self.sigma * (1 + self.Y) * dW[0] \
             + self.epsilon * dW[1]
+        self.t += dt
+
+    def reset(self) -> None:
+        """Reset model states to t=0."""
+        self.S = self.__S0 * np.ones_like(self.S)
+        self.Y = np.zeros_like(self.Y)
+        self.t = np.float(0)
+
+    @property
+    def volatility(self) -> np.array:
+        """Give stock price volatility state."""
+        return (self.Y + np.float(1)) * self.sigma
 
 
 # noinspection PyPep8Naming
@@ -298,9 +315,16 @@ class SimpleStochastic(StochasticVolatility):
             self,
             mew: np.float = np.nan,
             S0: np.float = np.nan,
-            sigma: np.float = np.nan
+            sigma: np.float = np.nan,
+            number_of_instances: np.int = np.int(10000),
     ):
         """Instantiate the Simple Stochastic model."""
         super().__init__(
-            mew=mew, S0=S0, sigma=sigma, kappa=0, beta=0, epsilon=0,
+            mew=mew,
+            S0=S0,
+            sigma=sigma,
+            kappa=0,
+            beta=0,
+            epsilon=0,
+            number_of_instances=number_of_instances,
         )

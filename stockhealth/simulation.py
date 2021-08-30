@@ -102,12 +102,16 @@ class MonteCarlo:
             facecolor='green', alpha=0.2, interpolate=True,
         )
         axs.fill_between(
-            x=df_stat.index, y1=df_stat['-2 sigma'], y2=df_stat['+2 sigma'],
+            x=df_stat.index.to_list(),
+            y1=df_stat['-2 sigma'],
+            y2=df_stat['+2 sigma'],
             where=df_stat['+2 sigma'] > df_stat['-2 sigma'],
             facecolor='green', alpha=0.4, interpolate=True,
         )
         axs.fill_between(
-            x=df_stat.index, y1=df_stat['-1 sigma'], y2=df_stat['+1 sigma'],
+            x=df_stat.index.to_list(),
+            y1=df_stat['-1 sigma'],
+            y2=df_stat['+1 sigma'],
             where=df_stat['+1 sigma'] > df_stat['-1 sigma'],
             facecolor='green', alpha=0.6, interpolate=True,
         )
@@ -115,6 +119,7 @@ class MonteCarlo:
         axs.legend(['3 sigma', '2 sigma', '1 sigma'])
         axs.set_title('Sigma spreads')
         axs.set_ylabel('Price')
+        axs.set_xlabel('Time')
         fig.suptitle('Timeseries of future spot price possibility statistics')
-        _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=45)
+        fig.autofmt_xdate(rotation=45)
         return fig, axs

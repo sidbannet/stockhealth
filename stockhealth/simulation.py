@@ -9,6 +9,7 @@
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import datetime, timedelta
 from stockhealth.model import StochasticVolatility as Model
@@ -78,3 +79,42 @@ class MonteCarlo:
     def __name_dataframe_index(self, name: str = 't') -> None:
         """Name the dataframe index column."""
         self.S.index.name = self.V.index.name = name
+
+    def plot(self) -> tuple:
+        """Plot timeseries statistics."""
+        assert self.__solved, "This simulation is not solved yet."
+        mean, std = self.S.mean(axis='columns'), self.S.std(axis='columns')
+        df_stat = pd.DataFrame(
+            {
+                '-3 sigma': mean - 3 * std,
+                '-2 sigma': mean - 2 * std,
+                '-1 sigma': mean - 1 * std,
+                '+1 sigma': mean + 1 * std,
+                '+2 sigma': mean + 2 * std,
+                '+3 sigma': mean + 3 * std,
+            }
+        )
+        fig = plt.figure('Timeseries of statistics')
+        axs = fig.subplots(nrows=1, ncols=1)
+        axs.fill_between(
+            x=df_stat.index, y1=df_stat['-3 sigma'], y2=df_stat['+3 sigma'],
+            where=df_stat['+3 sigma'] > df_stat['-3 sigma'],
+            facecolor='green', alpha=0.2, interpolate=True,
+        )
+        axs.fill_between(
+            x=df_stat.index, y1=df_stat['-2 sigma'], y2=df_stat['+2 sigma'],
+            where=df_stat['+2 sigma'] > df_stat['-2 sigma'],
+            facecolor='green', alpha=0.4, interpolate=True,
+        )
+        axs.fill_between(
+            x=df_stat.index, y1=df_stat['-1 sigma'], y2=df_stat['+1 sigma'],
+            where=df_stat['+1 sigma'] > df_stat['-1 sigma'],
+            facecolor='green', alpha=0.6, interpolate=True,
+        )
+        axs.grid(True)
+        axs.legend(['3 sigma', '2 sigma', '1 sigma'])
+        axs.set_title('Sigma spreads')
+        axs.set_ylabel('Price')
+        fig.suptitle('Timeseries of future spot price possibility statistics')
+        _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=45)
+        return fig, axs

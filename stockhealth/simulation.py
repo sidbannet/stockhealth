@@ -125,7 +125,7 @@ class MonteCarlo:
         fig.autofmt_xdate(rotation=45)
         return fig, axs
 
-    def stat(self, bins: int = int(1000)) -> pd.DataFrame:
+    def _stat(self, bins: int = int(1000)) -> pd.DataFrame:
         """Get PDF and CDF of the spo prices with time."""
         assert self.__solved, "This simulation is not solved yet."
         x = np.linspace(self.S.min().min(), self.S.max().max(), bins)

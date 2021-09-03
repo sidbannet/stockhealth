@@ -10,6 +10,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import datetime, timedelta
 from stockhealth.model import StochasticVolatility as Model
@@ -123,3 +124,20 @@ class MonteCarlo:
         fig.suptitle('Timeseries of future spot price possibility statistics')
         fig.autofmt_xdate(rotation=45)
         return fig, axs
+
+    def stat(self, bins: int = int(1000)) -> pd.DataFrame:
+        """Get PDF and CDF of the spo prices with time."""
+        assert self.__solved, "This simulation is not solved yet."
+        x = np.linspace(self.S.min().min(), self.S.max().max(), bins)
+        cdf = pd.DataFrame(
+            {
+                'S': x,
+            }
+        )
+        for k, v in self.S.iterrows():
+            if v.values.std() != 0:
+                kde = gaussian_kde(v.values)
+                kde_cdf = kde.evaluate(x).cumsum()
+                kde_cdf /= kde_cdf.max()
+                cdf[k] = kde_cdf
+        return cdf.set_index('S')

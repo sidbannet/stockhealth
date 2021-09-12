@@ -9,6 +9,7 @@
 
 from scipy.stats import norm
 import numpy as np
+_NUMBER_OF_TRADING_DAYS_PER_YEAR: float = 252.75
 
 
 # noinspection PyPep8Naming
@@ -278,7 +279,7 @@ class StochasticVolatility:
 
     def update(
             self,
-            dt: np.float = np.float(1 / 365),
+            dt: np.float = np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR),
     ) -> None:
         """Update states and proceed forward in time with random walk."""
         dW = [

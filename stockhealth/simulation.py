@@ -14,6 +14,7 @@ from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import datetime, timedelta
 from stockhealth.model import StochasticVolatility as Model
+from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
 
 # noinspection PyPep8Naming
@@ -30,8 +31,8 @@ class MonteCarlo:
     ):
         """Setup the simulation environment."""
         self._mdl = model
-        self.t_end = np.float(number_of_days / 365)
-        self.dt = np.float(steps_in_days / 365)
+        self.t_end = np.float(number_of_days / _NTD)
+        self.dt = np.float(steps_in_days / _NTD)
         self.__steps_in_days = steps_in_days
         self.__solved = False
         self.__start_date = start_date

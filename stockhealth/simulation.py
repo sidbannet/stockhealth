@@ -38,6 +38,8 @@ class MonteCarlo:
         self.__start_date = start_date
         self.__number_of_days = number_of_days
         self.__exchange_calendar = market_calendar(stock_exchange_name)
+        self._cdf_S = pd.DataFrame([])
+        self.__cdf_calculated = False
         self.S = pd.DataFrame(
             data=self._mdl.S, columns=[self._mdl.t],
         ).T
@@ -126,9 +128,11 @@ class MonteCarlo:
         fig.autofmt_xdate(rotation=45)
         return fig, axs
 
-    def _stat(self, bins: int = int(1000)) -> pd.DataFrame:
-        """Get PDF and CDF of the spo prices with time."""
+    def _stat(self, bins: int = int(1000)) -> None:
+        """Get CDF of the spo prices with time calculated."""
         assert self.__solved, "This simulation is not solved yet."
+        if self.__cdf_calculated:
+            return
         x = np.linspace(self.S.min().min(), self.S.max().max(), bins)
         cdf = pd.DataFrame(
             {
@@ -141,4 +145,5 @@ class MonteCarlo:
                 kde_cdf = kde.evaluate(x).cumsum()
                 kde_cdf /= kde_cdf.max()
                 cdf[k] = kde_cdf
-        return cdf.set_index('S')
+        self._cdf_S = cdf.set_index('S')
+        self.__cdf_calculated = True

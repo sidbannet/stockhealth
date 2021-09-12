@@ -38,7 +38,7 @@ class MonteCarlo:
         self.__start_date = start_date
         self.__number_of_days = number_of_days
         self.__exchange_calendar = market_calendar(stock_exchange_name)
-        self._cdf_S = pd.DataFrame([])
+        self._cdf = {}
         self.__cdf_calculated = False
         self.S = pd.DataFrame(
             data=self._mdl.S, columns=[self._mdl.t],
@@ -145,5 +145,7 @@ class MonteCarlo:
                 kde_cdf = kde.evaluate(x).cumsum()
                 kde_cdf /= kde_cdf.max()
                 cdf[k] = kde_cdf
-        self._cdf_S = cdf.set_index('S')
+        self._cdf = {
+            'S': cdf.set_index('S'),
+        }
         self.__cdf_calculated = True

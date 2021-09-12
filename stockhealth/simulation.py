@@ -136,7 +136,7 @@ class MonteCarlo:
             }
         )
         for k, v in self.S.iterrows():
-            if v.values.std() != 0:
+            if v.values.std() > 1e-12:
                 kde = gaussian_kde(v.values)
                 kde_cdf = kde.evaluate(x).cumsum()
                 kde_cdf /= kde_cdf.max()

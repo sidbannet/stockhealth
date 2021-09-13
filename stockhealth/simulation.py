@@ -98,32 +98,63 @@ class MonteCarlo:
                 '+3 sigma': mean + 3 * std,
             }
         )
+        v = self.S.values.copy()
+        v.sort(axis=1)
+        df_prob_ = pd.DataFrame(data=v, index=self.S.index).T
+        df_prob_['p'] = df_prob_.index / df_prob_.index.max()
+        df_prob_ = df_prob_.set_index('p')
+        df_prob__ = pd.DataFrame(
+            columns=df_prob_.columns,
+            index=[0.00135, 0.02275, 0.15865, 0.5, 0.84135, 0.97725, 0.99865],
+        )
+        df_prob = pd.concat(
+            [df_prob_, df_prob__],
+        ).sort_index().interpolate(axis=0).T
         fig = plt.figure('Timeseries of statistics')
-        axs = fig.subplots(nrows=1, ncols=1)
-        axs.fill_between(
+        axs = fig.subplots(nrows=2, ncols=1, sharex=True,)
+        axs[0].fill_between(
             x=df_stat.index, y1=df_stat['-3 sigma'], y2=df_stat['+3 sigma'],
             where=df_stat['+3 sigma'] > df_stat['-3 sigma'],
             facecolor='green', alpha=0.2, interpolate=True,
         )
-        axs.fill_between(
+        axs[0].fill_between(
             x=df_stat.index.to_list(),
             y1=df_stat['-2 sigma'],
             y2=df_stat['+2 sigma'],
             where=df_stat['+2 sigma'] > df_stat['-2 sigma'],
             facecolor='green', alpha=0.4, interpolate=True,
         )
-        axs.fill_between(
+        axs[0].fill_between(
             x=df_stat.index.to_list(),
             y1=df_stat['-1 sigma'],
             y2=df_stat['+1 sigma'],
             where=df_stat['+1 sigma'] > df_stat['-1 sigma'],
             facecolor='green', alpha=0.6, interpolate=True,
         )
-        axs.grid(True)
-        axs.legend(['3 sigma', '2 sigma', '1 sigma'])
-        axs.set_title('Sigma spreads')
-        axs.set_ylabel('Price')
-        axs.set_xlabel('Time')
+        mean.plot(ax=axs[0], label='mean', style='--', color='k',)
+        axs[1].fill_between(
+            x=df_prob.index, y1=df_prob[0.00135], y2=df_prob[0.99865],
+            where=df_prob[0.99865] > df_prob[0.00135],
+            facecolor='blue', alpha=0.2, interpolate=True,
+        )
+        axs[1].fill_between(
+            x=df_prob.index, y1=df_prob[0.02275], y2=df_prob[0.97725],
+            where=df_prob[0.97725] > df_prob[0.02275],
+            facecolor='blue', alpha=0.4, interpolate=True,
+        )
+        axs[1].fill_between(
+            x=df_prob.index, y1=df_prob[0.15865], y2=df_prob[0.84135],
+            where=df_prob[0.84135] > df_prob[0.15865],
+            facecolor='blue', alpha=0.6, interpolate=True,
+        )
+        df_prob[0.5].plot(ax=axs[1], label='median', style='-.', color='k',)
+        _ = [ax.grid(True) for ax in axs.flat]
+        axs[0].legend(['mean', '3 sigma', '2 sigma', '1 sigma'])
+        axs[1].legend(['median', '99.74 %', '95.45 %', '68.27 %'])
+        axs[0].set_title('Sigma spreads')
+        axs[1].set_title('Confidence Interval')
+        _ = [ax.set_ylabel('Price') for ax in axs.flat]
+        axs[-1].set_xlabel('Time')
         fig.suptitle('Timeseries of future spot price possibility statistics')
         fig.autofmt_xdate(rotation=45)
         return fig, axs

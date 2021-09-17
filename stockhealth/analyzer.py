@@ -169,3 +169,8 @@ class TimeSeries:
         df_return['MACD'] = macd
         df_return['Signal'] = signal
         return df_return
+
+    @property
+    def history__(self) -> pd.DataFrame:
+        """Get historical timeseries data."""
+        return self.__history

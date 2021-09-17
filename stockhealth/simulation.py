@@ -14,6 +14,7 @@ from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import datetime, timedelta
 from stockhealth.model import StochasticVolatility as Model
+from stockhealth.training import Trends
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
 
@@ -180,3 +181,39 @@ class MonteCarlo:
             'S': cdf.set_index('S'),
         }
         self.__cdf_calculated = True
+
+
+class MonteCarloWithTraining(MonteCarlo):
+    """Sub-class of MonteCarlo which trains a model before simulations."""
+
+    def __init__(
+            self,
+            trained_model: Trends = None,
+            number_of_instances: np.int = np.int(10000),
+            number_of_days: np.int = np.nan,
+            steps_in_days: np.int = np.int(1),
+            stock_exchange_name: str = 'NYSE',
+            start_date: datetime = datetime.today().date(),
+    ):
+        """Instantiate the class."""
+        mew = trained_model.history['mew']
+        price = trained_model.history['latest close']
+        sigma = trained_model.history['std']
+        beta = np.float(0)
+        kappa = np.float(0)
+        epsilon = np.float(0)
+        super().__init__(
+            model=Model(
+                mew=mew,
+                S0=price,
+                sigma=sigma,
+                beta=beta,
+                kappa=kappa,
+                epsilon=epsilon,
+                number_of_instances=number_of_instances,
+            ),
+            number_of_days=number_of_days,
+            steps_in_days=steps_in_days,
+            stock_exchange_name=stock_exchange_name,
+            start_date=start_date,
+        )

@@ -34,6 +34,7 @@ class Trends:
         self.__mew = (
             data.diff(periods=1) / data.shift(periods=1)
         ).mean() * _NTD
+        self.__S = df.Close[-1]
 
     @property
     def history(self) -> dict:
@@ -41,4 +42,5 @@ class Trends:
         return {
             'mew': self.__mew,
             'std': self.__std,
+            'latest close': self.__S,
         }

@@ -25,16 +25,12 @@ class Trends:
         self._trained = False
         df = stock.history__
         if number_of_days is not np.nan and number_of_days >= _NTD:
-            data = df.Close[-number_of_days:]
+            data = df['Risk free return'][-number_of_days:]
         else:
-            data = df.Close
-        self.__std = (
-            data.diff(periods=1) / data.shift(periods=1)
-        ).std() * np.sqrt(_NTD)
-        self.__mew = (
-            data.diff(periods=1) / data.shift(periods=1)
-        ).mean() * _NTD
-        self.__S = df.Close[-1]
+            data = df['Risk free return']
+        self.__std = data.std() * np.sqrt(_NTD)
+        self.__mew = data.mean() * _NTD
+        self.__S = df['Close'][-1]
 
     @property
     def history(self) -> dict:

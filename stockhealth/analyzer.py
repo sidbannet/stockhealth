@@ -31,7 +31,7 @@ class TimeSeries:
             df['Close'] - df['Open']
         )
         df['Real Worth'] = df['Close'][0] + \
-            (df['Close'].diff(periods=1) - df['Dividends']).cumsum()
+            (df['Close'].diff(periods=1) + df['Dividends']).cumsum()
         df['Real Worth'].values[0] = df['Close'].values[0]
         df['Risk free return'] = df['Real Worth'].diff(periods=1) / \
             df['Real Worth'].shift(periods=1)

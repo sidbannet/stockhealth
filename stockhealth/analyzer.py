@@ -35,6 +35,7 @@ class TimeSeries:
         df['Real Worth'].values[0] = df['Close'].values[0]
         df['Risk free return'] = df['Real Worth'].diff(periods=1) / \
             df['Real Worth'].shift(periods=1)
+        df['Risk free return'].values[0] = float(0.0)
 
     def technical(
             self,

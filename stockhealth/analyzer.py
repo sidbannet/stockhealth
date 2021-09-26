@@ -28,7 +28,7 @@ class TimeSeries:
         df['Intra-day volatility'] = (
             df['High'] - df['Low']
         ) / (
-            df['Close'] - df['Open']
+            df['Open']
         )
         df['Real Worth'] = df['Close'][0] + \
             (df['Close'].diff(periods=1) + df['Dividends']).cumsum()
@@ -36,6 +36,12 @@ class TimeSeries:
         df['Risk free return'] = df['Real Worth'].diff(periods=1) / \
             df['Real Worth'].shift(periods=1)
         df['Risk free return'].values[0] = float(0.0)
+        df['Volatility'] = (
+            df['High'] - df['Low']
+        ) / df['Real Worth'].shift(periods=1)
+        df['Volatility'].values[0] = (
+            df['High'].values[0] - df['Low'].values[0]
+        ) / df['Open'].values[0]
 
     def technical(
             self,

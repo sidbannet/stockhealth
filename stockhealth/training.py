@@ -55,7 +55,7 @@ class Trends:
         ).rolling(window=number_of_days).mean().diff(periods=-number_of_days)
         x = (
                 (
-                        df['Risk free return'] - df['Risk free return'].mean()
+                    df['Risk free return'] - df['Risk free return'].mean()
                 ) * _NTD * 100
         ).rolling(window=number_of_days).mean()
         # Get the features of stochastic volatility.
@@ -64,6 +64,6 @@ class Trends:
         ).rolling(window=number_of_days).std().diff(periods=-number_of_days)
         x = (
                 (
-                        df['Risk free return'] - df['Risk free return'].mean()
+                    df['Risk free return'] - df['Risk free return'].mean()
                 ) * _NTD * 100
         ).rolling(window=number_of_days).mean()

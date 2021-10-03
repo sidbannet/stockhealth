@@ -40,3 +40,30 @@ class Trends:
             'std': self.__std,
             'latest close': self.__S,
         }
+
+    def extract_model_features(
+            self,
+            number_of_days: np.int = np.nan,
+    ) -> None:
+        """
+        Extract Heston model features using Approximate Bayesian Computing.
+        """
+        df = self.stock.history__
+        # Get the features of stochastic mean rate of return.
+        y = - (
+                (df['Risk free return']) * _NTD * 100
+        ).rolling(window=number_of_days).mean().diff(periods=-number_of_days)
+        x = (
+                (
+                        df['Risk free return'] - df['Risk free return'].mean()
+                ) * _NTD * 100
+        ).rolling(window=number_of_days).mean()
+        # Get the features of stochastic volatility.
+        y = - (
+                (df['Risk free return']) * _NTD * 100
+        ).rolling(window=number_of_days).std().diff(periods=-number_of_days)
+        x = (
+                (
+                        df['Risk free return'] - df['Risk free return'].mean()
+                ) * _NTD * 100
+        ).rolling(window=number_of_days).mean()

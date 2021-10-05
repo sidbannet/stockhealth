@@ -63,7 +63,7 @@ class Trends:
                 (df['Risk free return']) * _NTD * 100
         ).rolling(window=number_of_days).std().diff(periods=-number_of_days)
         x = (
-                (
-                    df['Risk free return'] - df['Risk free return'].mean()
-                ) * _NTD * 100
-        ).rolling(window=number_of_days).mean()
+            df['Risk free return'] * _NTD * 100
+        ).rolling(window=number_of_days).std() - (
+            df['Risk free return'].std() * _NTD * 100
+        )

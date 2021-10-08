@@ -161,7 +161,7 @@ class MonteCarlo:
         return fig, axs
 
     def _stat(self, bins: int = int(1000)) -> None:
-        """Get CDF of the spo prices with time calculated."""
+        """Get CDF of the spot prices with time calculated."""
         assert self.__solved, "This simulation is not solved yet."
         if self.__cdf_calculated:
             return

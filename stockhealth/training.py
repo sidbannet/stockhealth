@@ -9,6 +9,7 @@
 
 import numpy as np
 from stockhealth.analyzer import TimeSeries as Stock
+from scipy.stats import gaussian_kde
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
 
@@ -44,7 +45,7 @@ class Trends:
     def extract_model_features(
             self,
             number_of_days: np.int = np.nan,
-    ) -> None:
+    ) -> tuple:
         """
         Extract Heston model features using Approximate Bayesian Computing.
         """
@@ -58,6 +59,7 @@ class Trends:
                     df['Risk free return'] - df['Risk free return'].mean()
                 ) * _NTD * 100
         ).rolling(window=number_of_days).mean()
+        f1 = self.__extract_kde(x=x, y=y, n=number_of_days, dim=100j)
         # Get the features of stochastic volatility.
         y = - (
                 (df['Risk free return']) * _NTD * 100
@@ -66,4 +68,23 @@ class Trends:
             df['Risk free return'] * _NTD * 100
         ).rolling(window=number_of_days).std() - (
             df['Risk free return'].std() * _NTD * 100
+        )
+        f2 = self.__extract_kde(x=x, y=y, n=number_of_days, dim=100j)
+        return f1, f2
+
+    @staticmethod
+    def __extract_kde(
+        x: np.array,
+        y: np.array,
+        n: int,
+        dim: complex = 100j,
+    ) -> np.array:
+        """Extract 2D kernel density function."""
+
+        xx, yy = np.mgrid[x.min():x.max():100j, y.min():y.max():100j]
+        positions = np.vstack([xx.ravel(), yy.ravel()])
+        values = np.vstack([x[n - 1: -n], y[n - 1: -n]])
+        kernel = gaussian_kde(values)
+        return np.reshape(
+            kernel(positions).T, xx.shape
         )

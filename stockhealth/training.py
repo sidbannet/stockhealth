@@ -27,8 +27,10 @@ class Trends:
         df = stock.history__
         if number_of_days is not np.nan and number_of_days >= _NTD:
             data = df['Risk free return'][-number_of_days:]
+            self.number_of_days = number_of_days
         else:
             data = df['Risk free return']
+            self.number_of_days = int(30)
         self.__std = data.std() * np.sqrt(_NTD)
         self.__mew = data.mean() * _NTD
         self.__S = df['Close'][-1]
@@ -44,12 +46,12 @@ class Trends:
 
     def extract_model_features(
             self,
-            number_of_days: np.int = np.nan,
     ) -> tuple:
         """
         Extract Heston model features using Approximate Bayesian Computing.
         """
         df = self.stock.history__
+        number_of_days = self.number_of_days
         # Get the features of stochastic mean rate of return.
         y = - (
                 (df['Risk free return']) * _NTD * 100

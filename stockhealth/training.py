@@ -19,7 +19,7 @@ class Trends:
     def __init__(
             self,
             stock: Stock = None,
-            number_of_days: np.int = np.nan,
+            number_of_days: np.int = int(1),
     ):
         """Instantiate the class."""
         self.stock = stock
@@ -61,7 +61,7 @@ class Trends:
                     df['Risk free return'] - df['Risk free return'].mean()
                 ) * _NTD * 100
         ).rolling(window=number_of_days).mean()
-        f1 = self.__extract_kde(x=x, y=y, n=number_of_days, dim=100j)
+        kde1 = self.__extract_kde(x=x, y=y, n=number_of_days, dim=100j)
         # Get the features of stochastic volatility.
         y = - (
                 (df['Risk free return']) * _NTD * 100
@@ -71,8 +71,8 @@ class Trends:
         ).rolling(window=number_of_days).std() - (
             df['Risk free return'].std() * _NTD * 100
         )
-        f2 = self.__extract_kde(x=x, y=y, n=number_of_days, dim=100j)
-        return f1, f2
+        kde2 = self.__extract_kde(x=x, y=y, n=number_of_days, dim=100j)
+        return kde1, kde2
 
     @staticmethod
     def __extract_kde(
@@ -87,6 +87,4 @@ class Trends:
         positions = np.vstack([xx.ravel(), yy.ravel()])
         values = np.vstack([x[n - 1: -n], y[n - 1: -n]])
         kernel = gaussian_kde(values)
-        return np.reshape(
-            kernel(positions).T, xx.shape
-        )
+        return kernel

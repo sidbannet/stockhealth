@@ -80,7 +80,7 @@ class Trends:
         y: np.array,
         n: int,
         dim: complex = 100j,
-    ) -> np.array:
+    ) -> gaussian_kde:
         """Extract 2D kernel density function."""
         values = np.vstack([x[n - 1: -n], y[n - 1: -n]])
         return gaussian_kde(values)

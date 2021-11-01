@@ -82,9 +82,5 @@ class Trends:
         dim: complex = 100j,
     ) -> np.array:
         """Extract 2D kernel density function."""
-
-        xx, yy = np.mgrid[x.min():x.max():100j, y.min():y.max():100j]
-        positions = np.vstack([xx.ravel(), yy.ravel()])
         values = np.vstack([x[n - 1: -n], y[n - 1: -n]])
-        kernel = gaussian_kde(values)
-        return kernel
+        return gaussian_kde(values)

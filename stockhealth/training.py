@@ -61,7 +61,7 @@ class Trends:
                     df['Risk free return'] - df['Risk free return'].mean()
                 ) * _NTD * 100
         ).rolling(window=number_of_days).mean()
-        kde1 = self.__extract_kde(x=x, y=y, n=number_of_days, dim=100j)
+        kde1 = self.__extract_kde(x=x, y=y, n=number_of_days,)
         # Get the features of stochastic volatility.
         y = - (
                 (df['Risk free return']) * _NTD * 100
@@ -71,7 +71,7 @@ class Trends:
         ).rolling(window=number_of_days).std() - (
             df['Risk free return'].std() * _NTD * 100
         )
-        kde2 = self.__extract_kde(x=x, y=y, n=number_of_days, dim=100j)
+        kde2 = self.__extract_kde(x=x, y=y, n=number_of_days,)
         return kde1, kde2
 
     @staticmethod
@@ -79,7 +79,6 @@ class Trends:
         x: np.array,
         y: np.array,
         n: int,
-        dim: complex = 100j,
     ) -> gaussian_kde:
         """Extract 2D kernel density function."""
         values = np.vstack([x[n - 1: -n], y[n - 1: -n]])

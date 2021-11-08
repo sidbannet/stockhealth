@@ -12,6 +12,8 @@ from stockhealth.analyzer import TimeSeries as Stock
 from scipy.stats import gaussian_kde
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
+vectorized_log = np.vectorize(np.log)
+
 
 class Trends:
     """Get historical trends given a stock."""
@@ -63,15 +65,21 @@ class Trends:
         ).rolling(window=number_of_days).mean()
         kde1 = self.__extract_kde(x=x, y=y, n=number_of_days,)
         # Get the features of stochastic volatility.
-        y = - (
-                (df['Risk free return']) * _NTD * 100
-        ).rolling(window=number_of_days).std().diff(periods=-number_of_days)
+        y = (
+            (df['Risk free return']) * _NTD * 100
+        ).shift(periods=number_of_days).rolling(window=number_of_days).std() / (
+            (df['Risk free return']) * _NTD * 100
+        ).rolling(window=number_of_days).std()
         x = (
             df['Risk free return'] * _NTD * 100
-        ).rolling(window=number_of_days).std() - (
+        ).rolling(window=number_of_days).std() / (
             df['Risk free return'].std() * _NTD * 100
         )
-        kde2 = self.__extract_kde(x=x, y=y, n=number_of_days,)
+        kde2 = self.__extract_kde(
+            x=vectorized_log(x),
+            y=vectorized_log(y),
+            n=2*number_of_days,
+        )
         return kde1, kde2
 
     @staticmethod

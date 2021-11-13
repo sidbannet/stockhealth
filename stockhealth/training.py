@@ -10,6 +10,7 @@
 import numpy as np
 from stockhealth.analyzer import TimeSeries as Stock
 from scipy.stats import gaussian_kde
+from sklearn.linear_model import LinearRegression as regression
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
 vectorized_log = np.vectorize(np.log)
@@ -56,12 +57,10 @@ class Trends:
         number_of_days = self.number_of_days
         # Get the features of stochastic mean rate of return.
         y = - (
-                (df['Risk free return']) * _NTD * 100
+            (df['Risk free return']) * _NTD * 100
         ).rolling(window=number_of_days).mean().diff(periods=-number_of_days)
         x = (
-                (
-                    df['Risk free return'] - df['Risk free return'].mean()
-                ) * _NTD * 100
+            (df['Risk free return'] - df['Risk free return'].mean()) * _NTD * 100
         ).rolling(window=number_of_days).mean()
         kde1 = self.__extract_kde(x=x, y=y, n=number_of_days,)
         # Get the features of stochastic volatility.
@@ -82,6 +81,58 @@ class Trends:
         )
         return kde1, kde2
 
+    def extract_coeffs(
+        self,
+    ) -> tuple:
+        """
+        Extract Heston model coefficients using regression fits.
+        """
+        df = self.stock.history__
+        number_of_days = self.number_of_days
+        kde_mean, kde_vol = self.extract_model_features()
+        num_resolution = 1000
+        # Get coefficients for stochastic mean return 
+        y = - (
+            (df['Risk free return']) * _NTD * 100
+        ).rolling(window=number_of_days).mean().diff(periods=-number_of_days)
+        x = (
+            (df['Risk free return'] - df['Risk free return'].mean()) * _NTD * 100
+        ).rolling(window=number_of_days).mean()
+        yy = np.linspace(start=y.min(), stop=y.max(), num=num_resolution) 
+        x_ = np.linspace(start=x.min(), stop=x.max(), num=num_resolution)
+        get_mean_mean = lambda x: self.__extract_norm_mean_from_kde(
+            yy=yy, x=x, kde=kde_mean,
+        )
+        get_std_mean = lambda x: self.__extract_norm_sigma_from_kde(
+            yy=yy, x=x, kde=kde_mean,
+        )
+        mean = np.vectorize(get_mean_mean)(x_)
+        std = np.vectorize(get_std_mean)(x_)
+        reg_mean = regression(fit_intercept=False).fit(X=x_, y=mean)
+        # Get coefficients for stochastic volatility
+        y = (
+            (df['Risk free return']) * _NTD * 100
+        ).shift(periods=number_of_days).rolling(window=number_of_days).std() / (
+            (df['Risk free return']) * _NTD * 100
+        ).rolling(window=number_of_days).std()
+        x = (
+            df['Risk free return'] * _NTD * 100
+        ).rolling(window=number_of_days).std() / (
+            df['Risk free return'].std() * _NTD * 100
+        )
+        yy = np.linspace(start=y.min(), stop=y.max(), num=num_resolution)
+        x_ = np.linspace(start=x.min(), stop=x.max(), num=num_resolution)
+        get_mean_std = lambda x: self.__extract_norm_mean_from_kde(
+            yy=yy, x=x, kde=kde_vol,
+        )
+        get_std_std = lambda x: self.__extract_norm_sigma_from_kde(
+            yy=yy, x=x, kde=kde_vol,
+        )
+        mean = np.vectorize(get_mean_std)(x_)
+        std = np.vectorize(get_std_std)(x_)
+        reg_std = regression(fit_intercept=False).fit(X=x_, y=mean)
+        return reg_mean, reg_std
+
     @staticmethod
     def __extract_kde(
         x: np.array,
@@ -91,3 +142,31 @@ class Trends:
         """Extract 2D kernel density function."""
         values = np.vstack([x[n - 1: -n], y[n - 1: -n]])
         return gaussian_kde(values)
+
+    @staticmethod
+    def __extract_norm_mean_from_kde(
+        yy: np.array,
+        x: np.float,
+        kde: gaussian_kde,
+    ) -> np.float:
+        """Extract the mean from kde."""
+        positions = np.vstack([np.full_like(yy, x), yy])
+        cdf = kde.evaluate(positions).T.cumsum()
+        cdf /= cdf.max()
+        return yy[np.argwhere(cdf >= 0.5)[0][0]]
+
+    @staticmethod
+    def __extract_norm_sigma_from_kde(
+        yy: np.array,
+        x: np.float,
+        kde: gaussian_kde,
+    ) -> np.float:
+        """Extract the std div from kde."""
+        positions = np.vstack([np.full_like(yy, x), yy])
+        cdf = kde.evaluate(positions).T.cumsum()
+        cdf /= cdf.max()
+        return yy[
+            np.argwhere(cdf >= 0.841)[0][0]
+        ] - yy[
+            np.argwhere(cdf <= 0.159)[-1][0]
+        ]

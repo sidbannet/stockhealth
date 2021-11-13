@@ -82,7 +82,11 @@ class Trends:
             y=vectorized_log(y),
             n=2*number_of_days,
         )
-        reg2 = self.__extract_regressor(x=x, y=y, n=2*number_of_days)
+        reg2 = self.__extract_regressor(
+            x=vectorized_log(x),
+            y=vectorized_log(y),
+            n=2*number_of_days
+        )
         return kde1, kde2, reg1, reg2
 
     @staticmethod
@@ -101,7 +105,7 @@ class Trends:
         y: np.array,
         n: int,
         intercept: bool = False,
-    ) -> Regressor:
+    ) -> object:
         """Extract Huber regressor from x, y values."""
         return Regressor(
             fit_intercept=intercept,

@@ -10,6 +10,7 @@
 import numpy as np
 from stockhealth.analyzer import TimeSeries as Stock
 from scipy.stats import gaussian_kde
+from sklearn.linear_model import HuberRegressor as Regressor
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
 vectorized_log = np.vectorize(np.log)
@@ -64,6 +65,7 @@ class Trends:
                 ) * _NTD * 100
         ).rolling(window=number_of_days).mean()
         kde1 = self.__extract_kde(x=x, y=y, n=number_of_days,)
+        reg1 = self.__extract_regressor(x=x, y=y, n=number_of_days)
         # Get the features of stochastic volatility.
         y = (
             (df['Risk free return']) * _NTD * 100
@@ -80,7 +82,8 @@ class Trends:
             y=vectorized_log(y),
             n=2*number_of_days,
         )
-        return kde1, kde2
+        reg2 = self.__extract_regressor(x=x, y=y, n=2*number_of_days)
+        return kde1, kde2, reg1, reg2
 
     @staticmethod
     def __extract_kde(
@@ -91,3 +94,18 @@ class Trends:
         """Extract 2D kernel density function."""
         values = np.vstack([x[n - 1: -n], y[n - 1: -n]])
         return gaussian_kde(values)
+
+    @staticmethod
+    def __extract_regressor(
+        x: np.array,
+        y: np.array,
+        n: int,
+        intercept: bool = False,
+    ) -> Regressor:
+        """Extract Huber regressor from x, y values."""
+        return Regressor(
+            fit_intercept=intercept,
+        ).fit(
+            X=np.array(x[n - 1: -n]).reshape(-1, 1),
+            y=np.array(y[n - 1: -n])
+        )

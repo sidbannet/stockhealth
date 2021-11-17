@@ -8,8 +8,9 @@
 #
 
 import numpy as np
+from dataclasses import dataclass
 from stockhealth.analyzer import TimeSeries as Stock
-from scipy.stats import gaussian_kde
+from scipy.stats import gaussian_kde, pearsonr
 from sklearn.linear_model import HuberRegressor as Regressor
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
@@ -37,6 +38,17 @@ class Trends:
         self.__std = data.std() * np.sqrt(_NTD)
         self.__mew = data.mean() * _NTD
         self.__S = df['Close'][-1]
+        self.heston_feature = None
+
+    @dataclass
+    class __StockFeature:
+        kde1: gaussian_kde
+        kde2: gaussian_kde
+        reg1: object
+        reg2: object
+        std1: np.float
+        std2: np.float
+        correlation: np.float
 
     @property
     def history(self) -> dict:
@@ -49,47 +61,63 @@ class Trends:
 
     def extract_model_features(
             self,
-    ) -> tuple:
+    ) -> None:
         """
         Extract Heston model features using Approximate Bayesian Computing.
         """
         df = self.stock.history__
         number_of_days = self.number_of_days
         # Get the features of stochastic mean rate of return.
-        y = - (
+        y1 = - (
                 (df['Risk free return']) * _NTD * 100
         ).rolling(window=number_of_days).mean().diff(periods=-number_of_days)
-        x = (
-                (
-                    df['Risk free return'] - df['Risk free return'].mean()
-                ) * _NTD * 100
+        x1 = (
+            (
+                df['Risk free return'] - df['Risk free return'].mean()
+            ) * _NTD * 100
         ).rolling(window=number_of_days).mean()
-        kde1 = self.__extract_kde(x=x, y=y, n=number_of_days,)
-        reg1 = self.__extract_regressor(x=x, y=y, n=number_of_days)
-        std1 = np.nanstd(x)
+        z1 = (df['Risk free return'] * _NTD * 100).rolling(window=number_of_days).mean()
+        kde1 = self.__extract_kde(x=x1, y=y1, n=number_of_days,)
+        reg1 = self.__extract_regressor(x=x1, y=y1, n=number_of_days)
+        std1 = np.nanstd(z1)
         # Get the features of stochastic volatility.
-        y = (
+        y2 = (
             (df['Risk free return']) * _NTD * 100
         ).shift(periods=number_of_days).rolling(window=number_of_days).std() / (
             (df['Risk free return']) * _NTD * 100
         ).rolling(window=number_of_days).std()
-        x = (
+        x2 = (
             df['Risk free return'] * _NTD * 100
         ).rolling(window=number_of_days).std() / (
             df['Risk free return'].std() * _NTD * 100
         )
+        z2 = (df['Risk free return'] * _NTD * 100).rolling(window=number_of_days).std()
         kde2 = self.__extract_kde(
-            x=vectorized_log(x),
-            y=vectorized_log(y),
+            x=vectorized_log(x2),
+            y=vectorized_log(y2),
             n=2*number_of_days,
         )
         reg2 = self.__extract_regressor(
-            x=vectorized_log(x),
-            y=vectorized_log(y),
+            x=vectorized_log(x2),
+            y=vectorized_log(y2),
             n=2*number_of_days
         )
-        std2 = np.nanstd(vectorized_log(x))
-        return kde1, kde2, reg1, reg2, std1, std2
+        std2 = np.nanstd(vectorized_log(z2))
+        choice_array = np.logical_and(
+            ~np.isnan(z1).values,
+            ~np.isnan(z2).values
+        )
+        corr, _ = pearsonr(x=z1[choice_array], y=z2[choice_array])
+        self.heston_feature = self.__StockFeature(
+            kde1=kde1,
+            kde2=kde2,
+            reg1=reg1,
+            reg2=reg2,
+            std1=std1,
+            std2=std2,
+            correlation=corr,
+        )
+        self._trained = True
 
     @staticmethod
     def __extract_kde(

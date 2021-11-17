@@ -307,6 +307,39 @@ class StochasticVolatility:
 
 
 # noinspection PyPep8Naming
+class Heston:
+    """Log-Normal Stochastic Volatility Model with mean reversion."""
+
+    def __init__(
+            self,
+            S0: np.float = np.nan,
+            V0: np.float = np.nan,
+            historical_roi: np.float = np.nan,
+            historical_volatility: np.float = np.nan,
+            mean_reversion_roi: np.float = np.nan,
+            mean_reversion_volatility: np.float = np.nan,
+            sigma_mew: np.float = np.nan,
+            sigma_y: np.float = np.nan,
+            correlation: np.float = np.float(0),
+            number_of_instances: np.int = np.int(100000),
+    ):
+        """Instantiate the Heston Model."""
+        self.S = S0 * np.ones(shape=number_of_instances),
+        self.volatility = V0 * np.ones(shape=number_of_instances)
+        self.mew_hat = historical_roi
+        self.sigma_hat = historical_volatility
+        self.rho = correlation
+        self.kappa_mew = mean_reversion_roi
+        self.kappa_y = mean_reversion_volatility
+        self.sigma_mew = sigma_mew
+        self.sigma_y = sigma_y
+        self.__N = number_of_instances
+        self._get_Yt = np.vectorize(
+            lambda volatility: np.log(volatility / historical_volatility)
+        )
+
+
+# noinspection PyPep8Naming
 class SimpleStochastic(StochasticVolatility):
     """
     Stochastic log-normal time dynamics model with constant volatility.

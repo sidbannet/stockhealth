@@ -313,6 +313,7 @@ class Heston:
     def __init__(
             self,
             S0: np.float = np.nan,
+            mew0: np.float = np.nan,
             V0: np.float = np.nan,
             historical_roi: np.float = np.nan,
             historical_volatility: np.float = np.nan,
@@ -325,6 +326,7 @@ class Heston:
     ):
         """Instantiate the Heston Model."""
         self.S = S0 * np.ones(shape=number_of_instances),
+        self.mew = mew0 * np.ones(shape=number_of_instances)
         self.volatility = V0 * np.ones(shape=number_of_instances)
         self.mew_hat = historical_roi
         self.sigma_hat = historical_volatility
@@ -334,9 +336,43 @@ class Heston:
         self.sigma_mew = sigma_mew
         self.sigma_y = sigma_y
         self.__N = number_of_instances
-        self._get_Yt = np.vectorize(
+        self.__get_Y = np.vectorize(
             lambda volatility: np.log(volatility / historical_volatility)
         )
+        self.__get_sigma = np.vectorize(
+            lambda Y: self.sigma_hat * np.exp(self.Y)
+        )
+        self.Y = self.__get_Y(self.volatility)
+        self.t = np.float(0)
+        self.__S = S0
+        self.__mew = mew0
+        self.__volatility = V0
+
+    def update(
+            self,
+            dt: np.float = np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR),
+    ) -> None:
+        """Update states and proceed forward in time with random walks."""
+        dW_mew, dW_Y = np.random.multivariate_normal(
+            mean=[0, 0],
+            cov=[[dt, dt * self.rho], [dt * self.rho, dt]],
+            size=self.__N,
+        )
+        dW = np.random.normal(loc=0, scale=np.sqrt(dt), size=self.__N)
+        self.S += self.mew * self.S * dt + \
+            self.volatility * self.S * dW
+        self.mew += self.kappa_mew * (self.mew - self.mew_hat) * dt + \
+            self.sigma_mew * dW_mew
+        self.Y += self.kappa_y * self.Y * self.sigma_y * dW_Y
+        self.volatility = self.__get_sigma(self.Y)
+        self.t += dt
+
+    def reset(self) -> None:
+        """Reset model states to t=0."""
+        self.S = np.full_like(self.S, fill_value=self.__S)
+        self.mew = np.full_like(self.mew, fill_value=self.__mew)
+        self.volatility = np.full(self.volatility, fill_value=self.__volatility)
+        self.Y = self.__get_Y(self.volatility)
 
 
 # noinspection PyPep8Naming

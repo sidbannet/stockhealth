@@ -339,8 +339,8 @@ class Heston:
         self.__get_Y = np.vectorize(
             lambda volatility: np.log(volatility / historical_volatility)
         )
-        self.__get_sigma = np.vectorize(
-            lambda Y: self.sigma_hat * np.exp(self.Y)
+        self.__get_volatility = np.vectorize(
+            lambda Y: historical_volatility * np.exp(Y)
         )
         self.Y = self.__get_Y(self.volatility)
         self.t = np.float(0)
@@ -357,14 +357,14 @@ class Heston:
             mean=[0, 0],
             cov=[[dt, dt * self.rho], [dt * self.rho, dt]],
             size=self.__N,
-        )
+        ).T
         dW = np.random.normal(loc=0, scale=np.sqrt(dt), size=self.__N)
         self.S += self.mew * self.S * dt + \
             self.volatility * self.S * dW
         self.mew += self.kappa_mew * (self.mew - self.mew_hat) * dt + \
             self.sigma_mew * dW_mew
         self.Y += self.kappa_y * self.Y * self.sigma_y * dW_Y
-        self.volatility = self.__get_sigma(self.Y)
+        self.volatility = self.__get_volatility(self.Y)
         self.t += dt
 
     def reset(self) -> None:

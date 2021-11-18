@@ -318,21 +318,21 @@ class Heston:
             historical_roi: np.float = np.nan,
             historical_volatility: np.float = np.nan,
             mean_reversion_roi: np.float = np.nan,
-            mean_reversion_volatility: np.float = np.nan,
+            mean_reversion_log_volatility: np.float = np.nan,
             sigma_mew: np.float = np.nan,
             sigma_y: np.float = np.nan,
             correlation: np.float = np.float(0),
             number_of_instances: np.int = np.int(100000),
     ):
         """Instantiate the Heston Model."""
-        self.S = S0 * np.ones(shape=number_of_instances),
+        self.S = S0 * np.ones(shape=number_of_instances)
         self.mew = mew0 * np.ones(shape=number_of_instances)
         self.volatility = V0 * np.ones(shape=number_of_instances)
         self.mew_hat = historical_roi
         self.sigma_hat = historical_volatility
         self.rho = correlation
         self.kappa_mew = mean_reversion_roi
-        self.kappa_y = mean_reversion_volatility
+        self.kappa_y = mean_reversion_log_volatility
         self.sigma_mew = sigma_mew
         self.sigma_y = sigma_y
         self.__N = number_of_instances
@@ -371,7 +371,7 @@ class Heston:
         """Reset model states to t=0."""
         self.S = np.full_like(self.S, fill_value=self.__S)
         self.mew = np.full_like(self.mew, fill_value=self.__mew)
-        self.volatility = np.full(self.volatility, fill_value=self.__volatility)
+        self.volatility = np.full_like(self.volatility, fill_value=self.__volatility)
         self.Y = self.__get_Y(self.volatility)
 
 

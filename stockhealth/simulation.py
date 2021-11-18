@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import datetime, timedelta
-from stockhealth.model import StochasticVolatility as Model
+from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
@@ -24,7 +24,7 @@ class MonteCarlo:
 
     def __init__(
             self,
-            model: Model = None,
+            model: Model or HestonProcess = None,
             number_of_days: np.int = np.nan,
             steps_in_days: np.int = np.int(1),
             stock_exchange_name: str = 'NYSE',
@@ -88,17 +88,6 @@ class MonteCarlo:
     def plot(self) -> tuple:
         """Plot timeseries statistics."""
         assert self.__solved, "This simulation is not solved yet."
-        mean, std = self.S.mean(axis='columns'), self.S.std(axis='columns')
-        df_stat = pd.DataFrame(
-            {
-                '-3 sigma': mean - 3 * std,
-                '-2 sigma': mean - 2 * std,
-                '-1 sigma': mean - 1 * std,
-                '+1 sigma': mean + 1 * std,
-                '+2 sigma': mean + 2 * std,
-                '+3 sigma': mean + 3 * std,
-            }
-        )
         v = self.S.values.copy()
         v.sort(axis=1)
         df_prob_ = pd.DataFrame(data=v, index=self.S.index).T
@@ -112,50 +101,28 @@ class MonteCarlo:
             [df_prob_, df_prob__],
         ).sort_index().interpolate(axis=0).T
         fig = plt.figure('Timeseries of statistics')
-        axs = fig.subplots(nrows=2, ncols=1, sharex=True,)
-        axs[0].fill_between(
-            x=df_stat.index, y1=df_stat['-3 sigma'], y2=df_stat['+3 sigma'],
-            where=df_stat['+3 sigma'] > df_stat['-3 sigma'],
-            facecolor='green', alpha=0.2, interpolate=True,
-        )
-        axs[0].fill_between(
-            x=df_stat.index.to_list(),
-            y1=df_stat['-2 sigma'],
-            y2=df_stat['+2 sigma'],
-            where=df_stat['+2 sigma'] > df_stat['-2 sigma'],
-            facecolor='green', alpha=0.4, interpolate=True,
-        )
-        axs[0].fill_between(
-            x=df_stat.index.to_list(),
-            y1=df_stat['-1 sigma'],
-            y2=df_stat['+1 sigma'],
-            where=df_stat['+1 sigma'] > df_stat['-1 sigma'],
-            facecolor='green', alpha=0.6, interpolate=True,
-        )
-        mean.plot(ax=axs[0], label='mean', style='--', color='k',)
-        axs[1].fill_between(
+        axs = fig.subplots(nrows=1, ncols=1, sharex=True,)
+        axs.fill_between(
             x=df_prob.index, y1=df_prob[0.00135], y2=df_prob[0.99865],
             where=df_prob[0.99865] > df_prob[0.00135],
             facecolor='blue', alpha=0.2, interpolate=True,
         )
-        axs[1].fill_between(
+        axs.fill_between(
             x=df_prob.index, y1=df_prob[0.02275], y2=df_prob[0.97725],
             where=df_prob[0.97725] > df_prob[0.02275],
             facecolor='blue', alpha=0.4, interpolate=True,
         )
-        axs[1].fill_between(
+        axs.fill_between(
             x=df_prob.index, y1=df_prob[0.15865], y2=df_prob[0.84135],
             where=df_prob[0.84135] > df_prob[0.15865],
             facecolor='blue', alpha=0.6, interpolate=True,
         )
-        df_prob[0.5].plot(ax=axs[1], label='median', style='-.', color='k',)
-        _ = [ax.grid(True) for ax in axs.flat]
-        axs[0].legend(['mean', '3 sigma', '2 sigma', '1 sigma'])
-        axs[1].legend(['median', '99.74 %', '95.45 %', '68.27 %'])
-        axs[0].set_title('Sigma spreads')
-        axs[1].set_title('Confidence Interval')
-        _ = [ax.set_ylabel('Price') for ax in axs.flat]
-        axs[-1].set_xlabel('Time')
+        df_prob[0.5].plot(ax=axs, label='median', style='-.', color='k',)
+        axs.grid(True)
+        axs.legend(['median', '99.74 %', '95.45 %', '68.27 %'])
+        axs.set_title('Confidence Interval')
+        axs.set_ylabel('Price')
+        axs.set_xlabel('Time')
         fig.suptitle('Timeseries of future spot price possibility statistics')
         fig.autofmt_xdate(rotation=45)
         return fig, axs
@@ -210,6 +177,57 @@ class MonteCarloWithTraining(MonteCarlo):
                 beta=beta,
                 kappa=kappa,
                 epsilon=epsilon,
+                number_of_instances=number_of_instances,
+            ),
+            number_of_days=number_of_days,
+            steps_in_days=steps_in_days,
+            stock_exchange_name=stock_exchange_name,
+            start_date=start_date,
+        )
+
+
+class MonteCarlosWithHeston(MonteCarlo):
+    """Sub-class of MonteCarlo with trained Heston process."""
+
+    def __init__(
+            self,
+            trained_model: Trends,
+            number_of_instances: np.int = np.int(10000),
+            number_of_days: np.int = np.nan,
+            steps_in_days: np.int = np.int(1),
+            stock_exchange_name: str = 'NYSE',
+            start_date: datetime = datetime.today().date(),
+    ):
+        """Instantiate the class."""
+        historical_roi = trained_model.history['mew']
+        historical_volatility = trained_model.history['std']
+        price = trained_model.history['latest close']
+        volatility = trained_model.stock.history__['Volatility'].rolling(
+            window=number_of_days,
+        ).mean()[-1] * np.sqrt(_NTD)
+        roi = trained_model.stock.history__['Risk free return'].rolling(
+            window=number_of_days,
+        ).mean()[-1] * _NTD
+        # noinspection PyProtectedMember
+        if not trained_model._trained:
+            trained_model.extract_model_features()
+        rho = trained_model.heston_feature.correlation
+        kappa_mew = trained_model.heston_feature.reg1.coef_[0]
+        kappa_y = trained_model.heston_feature.reg2.coef_[0]
+        sigma_mew = trained_model.heston_feature.std1
+        sigma_y = trained_model.heston_feature.std2
+        super().__init__(
+            model=HestonProcess(
+                S0=price,
+                mew0=roi,
+                V0=volatility,
+                historical_roi=historical_roi,
+                historical_volatility=historical_volatility,
+                mean_reversion_roi=kappa_mew,
+                mean_reversion_log_volatility=kappa_y,
+                sigma_mew=sigma_mew,
+                sigma_y=sigma_y,
+                correlation=rho,
                 number_of_instances=number_of_instances,
             ),
             number_of_days=number_of_days,

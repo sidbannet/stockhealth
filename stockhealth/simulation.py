@@ -212,8 +212,10 @@ class MonteCarlosWithHeston(MonteCarlo):
         if not trained_model._trained:
             trained_model.extract_model_features()
         rho = trained_model.heston_feature.correlation
-        kappa_mew = trained_model.heston_feature.reg1.coef_[0]
-        kappa_y = trained_model.heston_feature.reg2.coef_[0]
+        kappa_mew = trained_model.heston_feature.reg1.coef_[0] * \
+            _NTD / trained_model.number_of_days
+        kappa_y = trained_model.heston_feature.reg2.coef_[0] * \
+            _NTD / trained_model.number_of_days
         sigma_mew = trained_model.heston_feature.std1
         sigma_y = trained_model.heston_feature.std2
         super().__init__(

@@ -121,7 +121,6 @@ class MonteCarlo:
         df_prob[0.5].plot(ax=axs, label='median', style='-.', color='k',)
         axs.grid(True)
         axs.legend(['median', '99.74 %', '95.45 %', '68.27 %'])
-        axs.set_title('Sigma spreads')
         axs.set_title('Confidence Interval')
         axs.set_ylabel('Price')
         axs.set_xlabel('Time')

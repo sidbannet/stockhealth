@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import datetime, timedelta
-from stockhealth.model import StochasticVolatility as Model
+from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
@@ -24,7 +24,7 @@ class MonteCarlo:
 
     def __init__(
             self,
-            model: Model = None,
+            model: Model or HestonProcess = None,
             number_of_days: np.int = np.nan,
             steps_in_days: np.int = np.int(1),
             stock_exchange_name: str = 'NYSE',
@@ -210,6 +210,57 @@ class MonteCarloWithTraining(MonteCarlo):
                 beta=beta,
                 kappa=kappa,
                 epsilon=epsilon,
+                number_of_instances=number_of_instances,
+            ),
+            number_of_days=number_of_days,
+            steps_in_days=steps_in_days,
+            stock_exchange_name=stock_exchange_name,
+            start_date=start_date,
+        )
+
+
+class MonteCarlosWithHeston(MonteCarlo):
+    """Sub-class of MonteCarlo with trained Heston process."""
+
+    def __init__(
+            self,
+            trained_model: Trends,
+            number_of_instances: np.int = np.int(10000),
+            number_of_days: np.int = np.nan,
+            steps_in_days: np.int = np.int(1),
+            stock_exchange_name: str = 'NYSE',
+            start_date: datetime = datetime.today().date(),
+    ):
+        """Instantiate the class."""
+        historical_roi = trained_model.history['mew']
+        historical_volatility = trained_model.history['std']
+        price = trained_model.history['latest close']
+        volatility = trained_model.stock.history__['Volatility'].rolling(
+            window=number_of_days,
+        ).mean()[-1] * np.sqrt(_NTD)
+        roi = trained_model.stock.history__['Risk free return'].rolling(
+            window=number_of_days,
+        ).mean()[-1] * _NTD
+        # noinspection PyProtectedMember
+        if not trained_model._trained:
+            trained_model.extract_model_features()
+        rho = trained_model.heston_feature.correlation
+        kappa_mew = trained_model.heston_feature.reg1.coef_[0]
+        kappa_y = trained_model.heston_feature.reg2.coef_[0]
+        sigma_mew = trained_model.heston_feature.std1
+        sigma_y = trained_model.heston_feature.std2
+        super().__init__(
+            model=HestonProcess(
+                S0=price,
+                mew0=roi,
+                V0=volatility,
+                historical_roi=historical_roi,
+                historical_volatility=historical_volatility,
+                mean_reversion_roi=kappa_mew,
+                mean_reversion_log_volatility=kappa_y,
+                sigma_mew=sigma_mew,
+                sigma_y=sigma_y,
+                correlation=rho,
                 number_of_instances=number_of_instances,
             ),
             number_of_days=number_of_days,

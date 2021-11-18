@@ -88,7 +88,6 @@ class MonteCarlo:
     def plot(self) -> tuple:
         """Plot timeseries statistics."""
         assert self.__solved, "This simulation is not solved yet."
-        mean, std = self.S.mean(axis='columns'), self.S.std(axis='columns')
         v = self.S.values.copy()
         v.sort(axis=1)
         df_prob_ = pd.DataFrame(data=v, index=self.S.index).T

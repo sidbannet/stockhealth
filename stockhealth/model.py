@@ -258,7 +258,7 @@ class StochasticVolatility:
             self,
             mew: np.float = np.nan,
             S0: np.float = np.nan,
-            sigma: np.float = np.nan,
+            volatility: np.float = np.nan,
             beta: np.float = np.nan,
             epsilon: np.float = np.nan,
             kappa: np.float = np.nan,
@@ -267,9 +267,9 @@ class StochasticVolatility:
         """Instantiate the SV Model."""
         self.S = S0 * np.ones(shape=number_of_instances)
         self.mew = mew
-        self.sigma = sigma
-        self.beta = beta / sigma
-        self.epsilon = epsilon / sigma
+        self._volatility = volatility
+        self.beta = beta / volatility
+        self.epsilon = epsilon / volatility
         self.kappa = kappa
         self.Y = np.float(0) + np.zeros(shape=number_of_instances)
         self.t = np.float(0)
@@ -287,10 +287,10 @@ class StochasticVolatility:
             np.random.normal(loc=0, scale=np.sqrt(dt), size=self.__N),
         ]
         self.S += self.mew * self.S * dt + \
-            self.sigma * (1 + self.Y) * self.S * dW[0]
+            self._volatility * (1 + self.Y) * self.S * dW[0]
         self.Y += \
             - self.kappa * self.Y * dt \
-            + self.beta * self.sigma * (1 + self.Y) * dW[0] \
+            + self.beta * self._volatility * (1 + self.Y) * dW[0] \
             + self.epsilon * dW[1]
         self.t += dt
 
@@ -303,7 +303,7 @@ class StochasticVolatility:
     @property
     def volatility(self) -> np.array:
         """Give stock price volatility state."""
-        return (self.Y + np.float(1)) * self.sigma
+        return (self.Y + np.float(1)) * self._volatility
 
 
 # noinspection PyPep8Naming
@@ -385,14 +385,14 @@ class SimpleStochastic(StochasticVolatility):
             self,
             mew: np.float = np.nan,
             S0: np.float = np.nan,
-            sigma: np.float = np.nan,
+            volatility: np.float = np.nan,
             number_of_instances: np.int = np.int(10000),
     ):
         """Instantiate the Simple Stochastic model."""
         super().__init__(
             mew=mew,
             S0=S0,
-            sigma=sigma,
+            volatility=volatility,
             kappa=0,
             beta=0,
             epsilon=0,

@@ -85,10 +85,13 @@ class MonteCarlo:
         """Name the dataframe index column."""
         self.S.index.name = self.V.index.name = name
 
-    def plot(self) -> tuple:
+    def plot(self, plot_volatility: bool = False) -> tuple:
         """Plot timeseries statistics."""
         assert self.__solved, "This simulation is not solved yet."
-        v = self.S.values.copy()
+        if not plot_volatility:
+            v = self.S.values.copy()
+        else:
+            v = self.V.values.copy()
         v.sort(axis=1)
         df_prob_ = pd.DataFrame(data=v, index=self.S.index).T
         df_prob_['p'] = df_prob_.index / df_prob_.index.max()
@@ -121,7 +124,10 @@ class MonteCarlo:
         axs.grid(True)
         axs.legend(['median', '99.74 %', '95.45 %', '68.27 %'])
         axs.set_title('Confidence Interval')
-        axs.set_ylabel('Price')
+        if not plot_volatility:
+            axs.set_ylabel('Price')
+        else:
+            axs.set_ylabel('Volatility')
         axs.set_xlabel('Time')
         fig.suptitle('Timeseries of future spot price possibility statistics')
         fig.autofmt_xdate(rotation=45)

@@ -169,9 +169,9 @@ class MonteCarloWithTraining(MonteCarlo):
             start_date: datetime = datetime.today().date(),
     ):
         """Instantiate the class."""
-        mew = trained_model.history['roi']
+        mew = trained_model.history['mew']
         price = trained_model.history['latest close']
-        volatility = trained_model.history['volatility']
+        sigma = trained_model.history['std']
         beta = np.float(0)
         kappa = np.float(0)
         epsilon = np.float(0)
@@ -179,7 +179,7 @@ class MonteCarloWithTraining(MonteCarlo):
             model=Model(
                 mew=mew,
                 S0=price,
-                volatility=volatility,  # //todo: This is based on average daily volatility
+                sigma=sigma,
                 beta=beta,
                 kappa=kappa,
                 epsilon=epsilon,
@@ -205,8 +205,8 @@ class MonteCarlosWithHeston(MonteCarlo):
             start_date: datetime = datetime.today().date(),
     ):
         """Instantiate the class."""
-        historical_roi = trained_model.history['roi']
-        historical_volatility = trained_model.history['volatility']
+        historical_roi = trained_model.history['mew']
+        historical_volatility = trained_model.history['std']
         price = trained_model.history['latest close']
         volatility = trained_model.stock.history__['Volatility'].rolling(
             window=number_of_days,

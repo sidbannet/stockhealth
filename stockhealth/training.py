@@ -36,6 +36,7 @@ class Trends:
             data = df['Risk free return']
             self.number_of_days = int(30)
         self.__std = data.std() * np.sqrt(_NTD)
+        self.__vol = df['Volatility'].mean() * np.sqrt(_NTD)
         self.__mew = data.mean() * _NTD
         self.__S = df['Close'][-1]
         self.heston_feature = None
@@ -54,7 +55,8 @@ class Trends:
     def history(self) -> dict:
         """Get historical trend data."""
         return {
-            'mew': self.__mew,
+            'roi': self.__mew,
+            'volatility': self.__vol,
             'std': self.__std,
             'latest close': self.__S,
         }
@@ -83,7 +85,7 @@ class Trends:
         # Get the features of stochastic volatility.
         y2 = (
             (df['Risk free return']) * _NTD
-        ).shift(periods=number_of_days).rolling(window=number_of_days).std() / (
+        ).shift(periods=-number_of_days).rolling(window=number_of_days).std() / (
             (df['Risk free return']) * _NTD
         ).rolling(window=number_of_days).std()
         x2 = (
@@ -95,12 +97,12 @@ class Trends:
         kde2 = self.__extract_kde(
             x=vectorized_log(x2),
             y=vectorized_log(y2),
-            n=2*number_of_days,
+            n=number_of_days,
         )
         reg2 = self.__extract_regressor(
             x=vectorized_log(x2),
             y=vectorized_log(y2),
-            n=2*number_of_days
+            n=number_of_days
         )
         std2 = np.nanstd(vectorized_log(z2))
         choice_array = np.logical_and(

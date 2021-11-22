@@ -243,3 +243,13 @@ class MonteCarlosWithHeston(MonteCarlo):
             stock_exchange_name=stock_exchange_name,
             start_date=start_date,
         )
+
+
+class Derivative:
+    """
+    Options or derivative future predictions given an underlying
+    stochastic simulation is done.
+    """
+
+    def __init__(self):
+        """Instantiate the class."""

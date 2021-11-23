@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import datetime, timedelta
+from stockhealth.model import BlackScholes
 from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
@@ -251,5 +252,53 @@ class Derivative:
     stochastic simulation is done.
     """
 
-    def __init__(self):
+    def __init__(
+            self,
+            option: BlackScholes = None,
+            simulation_of_underlying: MonteCarlo = None,
+            call_price: np.float = np.nan,
+            put_price: np.float = np.nan,
+    ):
         """Instantiate the class."""
+        self.option = option
+        self.sim = simulation_of_underlying
+        self.greeks = option.greeks(call_price=call_price, put_price=put_price)
+        self.__underlying = {
+            'S': pd.DataFrame([]),
+            'V': pd.DataFrame([]),
+        }
+        self.__initial_call = call_price
+        self.__initial_put = put_price
+        self.price = {
+            'call': pd.DataFrame([]),
+            'put': pd.DataFrame([]),
+        }
+
+    def solve(self) -> None:
+        """Solve for options future price forecast."""
+        self.__underlying['S'] = pd.DataFrame(
+            data=self.sim.S.values,
+            index=self.sim.S.index,
+            columns=self.sim.S.columns,
+        )
+        self.__underlying['V'] = pd.DataFrame(
+            data=self.sim.V.values,
+            index=self.sim.V.index,
+            columns=self.sim.V.columns,
+        )
+        self.price['call'] = pd.DataFrame(
+            data=np.full_like(
+                self.sim.S.values,
+                fill_value=self.__initial_call,
+            ),
+            index=self.sim.S.index,
+            columns=self.sim.S.columns,
+        )
+        self.price['put'] = pd.DataFrame(
+            data=np.full_like(
+                self.sim.S.values,
+                fill_value=self.__initial_put,
+            ),
+            index=self.sim.S.index,
+            columns=self.sim.S.columns,
+        )

@@ -10,6 +10,7 @@
 from scipy.stats import norm
 import numpy as np
 _NUMBER_OF_TRADING_DAYS_PER_YEAR: float = 252.75
+_NUMBER_OF_CALENDAR_DAYS_PER_YEAR: float = 365.2425
 
 
 # noinspection PyPep8Naming
@@ -79,6 +80,47 @@ class BlackScholes:
         K = self.K
         T = self.T
         r = self.r
+        return (
+            np.exp(-r * T) * K * norm.cdf(
+                - self.__d2(sigma=sigma)
+            ) - S * norm.cdf(
+                - self.__d1(sigma=sigma)
+            )
+        )
+
+    def _call_price(
+            self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            sigma: np.float = np.nan,
+    ) -> np.float:
+        """European Call option price given sigma, time and interest rate."""
+        S = S
+        K = self.K
+        T = T
+        r = r
+        return (
+            S * norm.cdf(
+                self.__d1(sigma=sigma)
+            ) -
+            K * norm.cdf(
+                self.__d2(sigma=sigma)
+            ) * np.exp(-r * T)
+        )
+
+    def _put_price(
+            self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            sigma: np.float = np.nan,
+    ) -> np.float:
+        """European Put option price given sigma, time and interest rate."""
+        S = S
+        K = self.K
+        T = T
+        r = r
         return (
             np.exp(-r * T) * K * norm.cdf(
                 - self.__d2(sigma=sigma)

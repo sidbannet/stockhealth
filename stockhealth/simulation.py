@@ -17,6 +17,7 @@ from stockhealth.model import BlackScholes
 from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
+from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
 
 
 # noinspection PyPep8Naming
@@ -252,6 +253,7 @@ class Derivative:
     stochastic simulation is done.
     """
 
+    # noinspection PyPep8Naming,PyProtectedMember
     def __init__(
             self,
             option: BlackScholes = None,
@@ -273,6 +275,17 @@ class Derivative:
             'call': pd.DataFrame([]),
             'put': pd.DataFrame([]),
         }
+        self.__call_price = np.vectorize(
+            lambda S, T, r, sigma: option._call_price(
+                S=S, T=T, r=r, sigma=sigma,
+            )
+        )
+        self.__put_price = np.vectorize(
+            lambda S, T, r, sigma: option._put_price(
+                S=S, T=T, r=r, sigma=sigma,
+            )
+        )
+        self.__t_end = self.sim.t_end
 
     def solve(self) -> None:
         """Solve for options future price forecast."""

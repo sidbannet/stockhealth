@@ -16,8 +16,8 @@ from datetime import datetime, timedelta
 from stockhealth.model import BlackScholes
 from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
+from stockhealth.utilities.calendar import dt as date_difference
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
-from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
 
 
 # noinspection PyPep8Naming
@@ -271,6 +271,8 @@ class Derivative:
         }
         self.__initial_call = call_price
         self.__initial_put = put_price
+        self.__initial_call_iv = option._sigma_call(price=call_price)
+        self.__initial_put_iv = option._sigma_put(price=put_price)
         self.price = {
             'call': pd.DataFrame([]),
             'put': pd.DataFrame([]),
@@ -299,18 +301,48 @@ class Derivative:
             index=self.sim.V.index,
             columns=self.sim.V.columns,
         )
+        dt_from_reference = np.vectorize(
+            lambda now: date_difference(
+                now=now, reference=self.sim.S.index[-1],
+            )
+        )
+        external_factors = pd.DataFrame(
+            data=-dt_from_reference(self.sim.S.index),
+            index=self.sim.S.index,
+            columns=['time from expiry'],
+        )
+        external_factors['interest rate'] = self.option.r
+        call_iv_multiplier = self.__initial_call_iv / self.sim.V.values[0][0]
+        put_iv_multiplier = self.__initial_put_iv / self.sim.V.values[0][0]
+        number_of_instances = self.sim.S.shape[1]
+        time = np.transpose(
+            np.tile(
+                external_factors['time from expiry'].values,
+                (number_of_instances, 1),
+            )
+        )
+        interest_rate = np.transpose(
+            np.tile(
+                external_factors['interest rate'].values,
+                (number_of_instances, 1),
+            )
+        )
         self.price['call'] = pd.DataFrame(
-            data=np.full_like(
-                self.sim.S.values,
-                fill_value=self.__initial_call,
+            data=self.__call_price(
+                S=self.sim.S.values,
+                sigma=self.sim.V.values * call_iv_multiplier,
+                T=time,
+                r=interest_rate,
             ),
             index=self.sim.S.index,
             columns=self.sim.S.columns,
         )
         self.price['put'] = pd.DataFrame(
-            data=np.full_like(
-                self.sim.S.values,
-                fill_value=self.__initial_put,
+            data=self.__put_price(
+                S=self.sim.S.values,
+                sigma=self.sim.V.values * put_iv_multiplier,
+                T=time,
+                r=interest_rate,
             ),
             index=self.sim.S.index,
             columns=self.sim.S.columns,

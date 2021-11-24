@@ -228,6 +228,14 @@ class Derivative:
         """Instantiate the class."""
         self.option = option
         self.sim = simulation_of_underlying
+        if call_price is np.nan:
+            self._solve_for_call = False
+        else:
+            self._solve_for_call = True
+        if put_price is np.nan:
+            self._solve_for_put = False
+        else:
+            self._solve_for_put = True
         self.greeks = option.greeks(call_price=call_price, put_price=put_price)
         self.__underlying = {
             'S': pd.DataFrame([]),
@@ -251,7 +259,8 @@ class Derivative:
                 S=S, T=T, r=r, sigma=sigma,
             )
         )
-        self.__solved = False
+        self._options_forecast = pd.DataFrame([])
+        self._solved = False
 
     def solve(self) -> None:
         """Solve for options future price forecast."""
@@ -291,31 +300,46 @@ class Derivative:
                 (number_of_instances, 1),
             )
         )
-        self.price['call'] = pd.DataFrame(
-            data=self.__call_price(
-                S=self.sim.S.values,
-                sigma=self.sim.V.values * call_iv_multiplier,
-                T=time,
-                r=interest_rate,
-            ),
-            index=self.sim.S.index,
-            columns=self.sim.S.columns,
-        )
-        self.price['put'] = pd.DataFrame(
-            data=self.__put_price(
-                S=self.sim.S.values,
-                sigma=self.sim.V.values * put_iv_multiplier,
-                T=time,
-                r=interest_rate,
-            ),
-            index=self.sim.S.index,
-            columns=self.sim.S.columns,
-        )
-        self.__solved = True
+        if self._solve_for_call:
+            self.price['call'] = pd.DataFrame(
+                data=self.__call_price(
+                    S=self.sim.S.values,
+                    sigma=self.sim.V.values * call_iv_multiplier,
+                    T=time,
+                    r=interest_rate,
+                ),
+                index=self.sim.S.index,
+                columns=self.sim.S.columns,
+            )
+        else:
+            self.price['call'] = pd.DataFrame(
+                data=np.full_like(self.sim.S.values, fill_value=0.0),
+                index=self.sim.S.index,
+                columns=self.sim.S.columns,
+            )
+        if self._solve_for_put:
+            self.price['put'] = pd.DataFrame(
+                data=self.__put_price(
+                    S=self.sim.S.values,
+                    sigma=self.sim.V.values * put_iv_multiplier,
+                    T=time,
+                    r=interest_rate,
+                ),
+                index=self.sim.S.index,
+                columns=self.sim.S.columns,
+            )
+        else:
+            self.price['put'] = pd.DataFrame(
+                data=np.full_like(self.sim.S.values, fill_value=0.0),
+                index=self.sim.S.index,
+                columns=self.sim.S.columns,
+            )
+        self._options_forecast = self.price['call'] + self.price['put']
+        self._solved = True
 
     def plot(self) -> tuple:
         """Timeseries plot with uncertainty bands."""
-        assert self.__solved, "The Derivative futures is not simulated yet."
+        assert self._solved, "The Derivative futures is not simulated yet."
         fig = plt.figure('Timeseries of options price statistics')
         axs = fig.subplots(nrows=2, ncols=1, sharex=True)
         fig, axs[0] = probplt(self.price['call'], fig=fig, axs=axs[0])
@@ -323,4 +347,5 @@ class Derivative:
         axs[0].set_title('Call')
         axs[1].set_title('Put')
         _ = [ax.set_ylabel('Price') for ax in axs.flat]
+        fig.suptitle('Timeseries of future derivative price possibility statistics')
         return fig, axs

@@ -185,3 +185,7 @@ class TimeSeries:
     def history__(self) -> pd.DataFrame:
         """Get historical timeseries data."""
         return self.__history
+
+
+class Trade:
+    """Analyze expected return on trade(s)."""

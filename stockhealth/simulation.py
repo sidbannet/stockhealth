@@ -121,6 +121,12 @@ class MonteCarlo:
         }
         self.__cdf_calculated = True
 
+    @property
+    def get_forecast__(self) -> pd.DataFrame:
+        """Get the timeseries data of stock forecast."""
+        assert self.__solved, "The simulation is not solved yet."
+        return self.S
+
 
 class MonteCarloWithTraining(MonteCarlo):
     """Sub-class of MonteCarlo which trains a model before simulations."""
@@ -349,3 +355,12 @@ class Derivative:
         _ = [ax.set_ylabel('Price') for ax in axs.flat]
         fig.suptitle('Timeseries of future derivative price possibility statistics')
         return fig, axs
+
+    @property
+    def get_forecast__(
+            self,
+            number_of_shares_per_contract: int = int(100),
+    ) -> pd.DataFrame:
+        """Get timeseries forecast of the options value."""
+        assert self._solved, "This simulation is not solved yet."
+        return self._options_forecast * number_of_shares_per_contract

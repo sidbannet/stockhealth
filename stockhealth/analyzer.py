@@ -9,7 +9,9 @@
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from enum import Enum, unique
 import yfinance as yf
+from stockhealth.simulation import MonteCarlo
 
 
 class TimeSeries:
@@ -189,3 +191,18 @@ class TimeSeries:
 
 class Trade:
     """Analyze expected return on trade(s)."""
+
+    def __init__(self):
+        """Instantiate the trade class."""
+
+    def __call__(self, underlying: MonteCarlo, **kwargs):
+        """Calling the class."""
+
+
+@unique
+class TransactionType(Enum):
+    call = 'calls'
+    put = 'puts'
+    stock = 'stock'
+    bond = 'bond'
+    cash = 'cash'

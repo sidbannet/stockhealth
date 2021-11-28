@@ -10,8 +10,10 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 from enum import Enum, unique
+from collections import namedtuple
 import yfinance as yf
-from stockhealth.simulation import MonteCarlo
+
+Transaction = namedtuple('forecast', ['simulation', 'amount'])
 
 
 class TimeSeries:
@@ -192,11 +194,17 @@ class TimeSeries:
 class Trade:
     """Analyze expected return on trade(s)."""
 
-    def __init__(self):
+    def __init__(
+            self,
+            base_transaction: Transaction,
+            *args: Transaction,
+    ):
         """Instantiate the trade class."""
-
-    def __call__(self, underlying: MonteCarlo, **kwargs):
-        """Calling the class."""
+        price = base_transaction.simulation.get_forecast__ \
+            * base_transaction.amount
+        for arg in args:
+            price += arg.simulation.get_forecast__ * arg.amount
+        self.price = price
 
 
 @unique

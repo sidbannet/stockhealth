@@ -8,11 +8,13 @@
 #
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from datetime import date
+from datetime import date, timedelta
 from enum import Enum, unique
 from collections import namedtuple
 import yfinance as yf
+from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
 
 Transaction = namedtuple('forecast', ['simulation', 'amount'])
 
@@ -24,6 +26,17 @@ class TransactionType(Enum):
     stock = 'stock'
     bond = 'bond'
     cash = 'cash'
+
+
+@unique
+class OptionsGreekType(Enum):
+    delta = 'delta'
+    gamma = 'gamma'
+    vega = 'vega'
+    theta = 'theta'
+    rho = 'rho'
+    intrinsic = 'intrinsic'
+    extrinsic = 'extrinsic'
 
 
 class TimeSeries:
@@ -200,15 +213,28 @@ class TimeSeries:
         """Get historical timeseries data."""
         return self.__history
 
+    @property
+    def dividend_yield(self) -> np.float:
+        """Get dividend yield."""
+        return self.__ticker.dividends.loc[
+            date.today() - timedelta(_NCD):
+        ].sum() / self.history__['Close'].iloc[-1]
+
     def options_chain__(
             self,
             expiry_date: date,
             type_of_transaction: TransactionType,
-    ) -> pd.DataFrame:
+    ):
         """Get options chain properties."""
-        return self.__ticker.option_chain(
+        chain = self.__ticker.option_chain(
             date=expiry_date.strftime('%Y-%m-%d')
         ).__getattribute__(type_of_transaction.value)
+        dt = (
+            pd.to_datetime(expiry_date.strftime('%Y-%m-%d') + 'T23:59:59.00') -
+            pd.to_datetime(chain['lastTradeDate'])
+        ).astype('timedelta64[D]') / _NCD
+        chain['time to expiry in calendar year'] = dt.values
+        return chain.set_index('strike')
 
 
 class Trade:

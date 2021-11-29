@@ -9,11 +9,21 @@
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from datetime import date
 from enum import Enum, unique
 from collections import namedtuple
 import yfinance as yf
 
 Transaction = namedtuple('forecast', ['simulation', 'amount'])
+
+
+@unique
+class TransactionType(Enum):
+    call = 'calls'
+    put = 'puts'
+    stock = 'stock'
+    bond = 'bond'
+    cash = 'cash'
 
 
 class TimeSeries:
@@ -190,6 +200,16 @@ class TimeSeries:
         """Get historical timeseries data."""
         return self.__history
 
+    def options_chain__(
+            self,
+            expiry_date: date,
+            type_of_transaction: TransactionType,
+    ) -> pd.DataFrame:
+        """Get options chain properties."""
+        return self.__ticker.option_chain(
+            date=expiry_date.strftime('%Y-%m-%d')
+        ).__getattribute__(type_of_transaction.value)
+
 
 class Trade:
     """Analyze expected return on trade(s)."""
@@ -205,12 +225,3 @@ class Trade:
         for arg in args:
             price += arg.simulation.get_forecast__ * arg.amount
         self.price = price
-
-
-@unique
-class TransactionType(Enum):
-    call = 'calls'
-    put = 'puts'
-    stock = 'stock'
-    bond = 'bond'
-    cash = 'cash'

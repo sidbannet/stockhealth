@@ -8,8 +8,36 @@
 #
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from datetime import date, timedelta
+from enum import Enum, unique
+from collections import namedtuple
 import yfinance as yf
+from stockhealth.model import BlackScholes as Bs
+from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
+
+Transaction = namedtuple('forecast', ['simulation', 'amount'])
+
+
+@unique
+class TransactionType(Enum):
+    call = 'calls'
+    put = 'puts'
+    stock = 'stock'
+    bond = 'bond'
+    cash = 'cash'
+
+
+@unique
+class OptionsGreekType(Enum):
+    delta = 'delta'
+    gamma = 'gamma'
+    vega = 'vega'
+    theta = 'theta'
+    rho = 'rho'
+    intrinsic = 'intrinsic'
+    extrinsic = 'extrinsic'
 
 
 class TimeSeries:
@@ -186,6 +214,111 @@ class TimeSeries:
         """Get historical timeseries data."""
         return self.__history
 
+    @property
+    def dividend_yield(self) -> np.float:
+        """Get dividend yield."""
+        return self.__ticker.dividends.loc[
+            date.today() - timedelta(_NCD):
+        ].sum() / self.history__['Close'].iloc[-1]
+
+    def __get_greeks(
+            self,
+            time: np.array,
+            price: np.array,
+            strike: np.array,
+            r: np.float,
+            type_of_transaction: TransactionType,
+    ) -> dict:
+        """Get greeks from the options chain."""
+        # //todo: Make this vectorized method
+        delta, gamma, vega, theta, rho, intrinsic, extrinsic = [], [], [], [], [], [], []
+
+        def __option(strike_price, time_to_expiry) -> Bs:
+            """Get Black-Scholes Options object."""
+            return Bs(
+                S=self.history__['Close'].iloc[-1],
+                K=strike_price,
+                T=time_to_expiry,
+                r=r,
+                q=self.dividend_yield,
+            )
+        for (k, t, p) in zip(strike, time, price):
+            if type_of_transaction.value == 'calls':
+                greeks = __option(
+                    strike_price=k, time_to_expiry=t
+                ).greeks(call_price=p)['call']
+            elif type_of_transaction.value == 'puts':
+                greeks = __option(
+                    strike_price=k, time_to_expiry=t,
+                ).greeks(put_price=p)['put']
+            else:
+                greeks = {
+                    'delta': np.nan,
+                    'gamma': np.nan,
+                    'vega': np.nan,
+                    'theta': np.nan,
+                    'rho': np.nan,
+                    'intrinsic': np.nan,
+                    'extrinsic': np.nan,
+                }
+            delta.append(greeks['delta'])
+            gamma.append(greeks['gamma'])
+            vega.append(greeks['vega'])
+            theta.append(greeks['theta'])
+            rho.append(greeks['rho'])
+            intrinsic.append(greeks['intrinsic'])
+            extrinsic.append(greeks['extrinsic'])
+
+        return {
+            'delta': delta,
+            'gamma': gamma,
+            'vega': vega,
+            'theta': theta,
+            'rho': rho,
+            'intrinsic': intrinsic,
+            'extrinsic': extrinsic,
+        }
+
+    def options_chain__(
+            self,
+            expiry_date: date,
+            type_of_transaction: TransactionType,
+            interest_rate: np.float = 0.01,
+            greek_on: bool = False,
+    ) -> pd.DataFrame:
+        """Get options chain properties."""
+        chain = self.__ticker.option_chain(
+            date=expiry_date.strftime('%Y-%m-%d')
+        ).__getattribute__(type_of_transaction.value)
+        dt = (
+            pd.to_datetime(expiry_date.strftime('%Y-%m-%d') + 'T23:59:59.00') -
+            pd.to_datetime(chain['lastTradeDate'])
+        ).astype('timedelta64[D]') / _NCD
+        chain['time to expiry in calendar year'] = dt.values
+        if greek_on:
+            greeks = self.__get_greeks(
+                time=dt.values,
+                price=chain['lastPrice'].values,
+                strike=chain['strike'].values,
+                r=interest_rate,
+                type_of_transaction=type_of_transaction,
+            )
+            return chain.join(pd.DataFrame(greeks)).set_index('strike')
+        else:
+            return chain.set_index('strike')
+
 
 class Trade:
     """Analyze expected return on trade(s)."""
+
+    def __init__(
+            self,
+            base_transaction: Transaction,
+            *args: Transaction,
+    ):
+        """Instantiate the trade class."""
+        price = base_transaction.simulation.get_forecast__ \
+            * base_transaction.amount
+        for arg in args:
+            price += arg.simulation.get_forecast__ * arg.amount
+        self.price = price

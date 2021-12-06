@@ -141,8 +141,11 @@ class MonteCarloWithTraining(MonteCarlo):
             start_date: datetime = datetime.today().date(),
     ):
         """Instantiate the class."""
+        stock_history = trained_model.stock.history__.loc[
+            :np.datetime64(start_date)
+        ]
         mew = trained_model.history['roi']
-        price = trained_model.history['latest close']
+        price = stock_history['Close'].values[-1]
         sigma = trained_model.history['std']
         beta = np.float(0)
         kappa = np.float(0)
@@ -179,11 +182,14 @@ class MonteCarlosWithHeston(MonteCarlo):
         """Instantiate the class."""
         historical_roi = trained_model.history['roi']
         historical_volatility = trained_model.history['std']
-        price = trained_model.history['latest close']
-        volatility = trained_model.stock.history__['Volatility'].rolling(
+        stock_history = trained_model.stock.history__.loc[
+            :np.datetime64(start_date)
+        ]
+        price = stock_history['Close'].values[-1]
+        volatility = stock_history['Volatility'].rolling(
             window=number_of_days,
         ).mean()[-1] * np.sqrt(_NTD)
-        roi = trained_model.stock.history__['Risk free return'].rolling(
+        roi = stock_history['Risk free return'].rolling(
             window=number_of_days,
         ).mean()[-1] * _NTD
         # noinspection PyProtectedMember

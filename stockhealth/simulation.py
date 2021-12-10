@@ -261,16 +261,8 @@ class Derivative:
             'call': pd.DataFrame([]),
             'put': pd.DataFrame([]),
         }
-        self.__call_price = np.vectorize(
-            lambda S, T, r, sigma: option._call_price(
-                S=S, T=T, r=r, sigma=sigma,
-            )
-        )
-        self.__put_price = np.vectorize(
-            lambda S, T, r, sigma: option._put_price(
-                S=S, T=T, r=r, sigma=sigma,
-            )
-        )
+        self.__call_price = option._call_values
+        self.__put_price = option._put_values
         self._options_forecast = pd.DataFrame([])
         self._solved = False
 

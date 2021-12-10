@@ -37,17 +37,17 @@ class BlackScholes:
         self.T = T
         self.r = r
         self.q = q
-        self.__d1 = lambda sigma: (
+        self.__d1 = lambda sigma, S, r, q, T: (
             (
-                np.log(self.S / self.K) +
-                (self.r - self.q + sigma ** 2 / 2.0) * self.T
-            ) / (sigma * np.sqrt(self.T))
+                np.log(S / self.K) +
+                (r - q + sigma ** 2 / 2.0) * T
+            ) / (sigma * np.sqrt(T))
         )
-        self.__d2 = lambda sigma: (
+        self.__d2 = lambda sigma, S, r, q, T: (
             (
-                np.log(self.S / self.K) +
-                (self.r - self.q + sigma ** 2 / 2.0) * self.T
-            ) / (sigma * np.sqrt(self.T)) - (sigma * np.sqrt(self.T))
+                np.log(S / self.K) +
+                (r - q + sigma ** 2 / 2.0) * T
+            ) / (sigma * np.sqrt(T)) - (sigma * np.sqrt(T))
         )
         self._call_values = np.vectorize(self._call_value)
         self._put_values = np.vectorize(self._put_value)
@@ -55,206 +55,272 @@ class BlackScholes:
 
     def _call_value(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """European Call option value given sigma."""
-        S = self.S
         K = self.K
-        T = self.T
-        r = self.r
         return (
             S * norm.cdf(
-                self.__d1(sigma=sigma)
+                self.__d1(
+                    sigma=sigma,
+                    S=S,
+                    T=T,
+                    r=r,
+                    q=q,
+                )
             ) -
             K * norm.cdf(
-                self.__d2(sigma=sigma)
+                self.__d2(
+                    sigma=sigma,
+                    S=S,
+                    T=T,
+                    r=r,
+                    q=q,
+                )
             ) * np.exp(-r * T)
         )
 
     def _put_value(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """European Put option valuation given sigma."""
-        S = self.S
         K = self.K
-        T = self.T
-        r = self.r
         return (
             np.exp(-r * T) * K * norm.cdf(
-                - self.__d2(sigma=sigma)
+                - self.__d2(
+                    sigma=sigma,
+                    S=S,
+                    T=T,
+                    r=r,
+                    q=q,
+                )
             ) - S * norm.cdf(
-                - self.__d1(sigma=sigma)
-            )
-        )
-
-    def _call_price(
-            self,
-            S: np.float = np.nan,
-            T: np.float = np.nan,
-            r: np.float = np.nan,
-            sigma: np.float = np.nan,
-    ) -> np.float:
-        """European Call option price given sigma, time and interest rate."""
-        S = S
-        K = self.K
-        T = T
-        r = r
-        return (
-            S * norm.cdf(
-                self.__d1(sigma=sigma)
-            ) -
-            K * norm.cdf(
-                self.__d2(sigma=sigma)
-            ) * np.exp(-r * T)
-        )
-
-    def _put_price(
-            self,
-            S: np.float = np.nan,
-            T: np.float = np.nan,
-            r: np.float = np.nan,
-            sigma: np.float = np.nan,
-    ) -> np.float:
-        """European Put option price given sigma, time and interest rate."""
-        S = S
-        K = self.K
-        T = T
-        r = r
-        return (
-            np.exp(-r * T) * K * norm.cdf(
-                - self.__d2(sigma=sigma)
-            ) - S * norm.cdf(
-                - self.__d1(sigma=sigma)
+                - self.__d1(
+                    sigma=sigma,
+                    S=S,
+                    T=T,
+                    r=r,
+                    q=q,
+                )
             )
         )
 
     def __call_delta(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get call delta."""
-        return norm.cdf(self.__d1(sigma=sigma)) * np.exp(-self.q * self.T)
+        return norm.cdf(
+            self.__d1(
+                sigma=sigma,
+                S=S,
+                T=T,
+                r=r,
+                q=q,
+            )
+        ) * np.exp(-q * T)
 
     def __call_theta(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get call theta."""
         return 0.01 * (
                 - np.exp(
-                    -self.q * self.T
+                    -q * T
                 ) * (
-                    self.S * norm.pdf(self.__d1(sigma=sigma)) * sigma
-                ) / (2 * np.sqrt(self.T)) -
-                self.r * self.K * np.exp(
-                    -self.r * self.T) * norm.cdf(self.__d2(sigma=sigma)) +
-                self.q * self.S * np.exp(
-                    -self.q * self.T) * norm.cdf(self.__d1(sigma=sigma))
+                    S * norm.pdf(self.__d1(
+                        sigma=sigma, S=S, T=T, r=r, q=q,)) * sigma
+                ) / (2 * np.sqrt(T)) -
+                r * self.K * np.exp(
+                    -r * T) * norm.cdf(self.__d2(
+                        sigma=sigma, S=S, T=T, r=r, q=q,)) +
+                q * S * np.exp(
+                    -q * T) * norm.cdf(self.__d1(
+                        sigma=sigma, S=S, T=T, r=r, q=q,))
         )
 
     def __call_rho(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get call rho."""
         return 0.01 * (
-            self.K * self.T * np.exp(
-                -self.r * self.T
-            ) * norm.cdf(self.__d2(sigma=sigma))
+            self.K * T * np.exp(
+                -r * T
+            ) * norm.cdf(self.__d2(sigma=sigma, S=S, T=T, r=r, q=q,))
         )
 
     def __put_delta(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get put delta."""
-        return - norm.cdf(-self.__d1(sigma=sigma)) * np.exp(-self.q * self.T)
+        return - norm.cdf(-self.__d1(
+            sigma=sigma, S=S, T=T, r=r, q=q,)) * np.exp(-q * T)
 
     def __put_theta(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get put theta."""
         return 0.01 * (
             - np.exp(
-                -self.q * self.T
+                -q * T
             ) * (
-                self.S * norm.pdf(self.__d1(sigma=sigma)) * sigma
-            ) / (2 * np.sqrt(self.T)) +
-            self.r * self.K * np.exp(-self.r * self.T) * norm.cdf(
-                -self.__d2(sigma=sigma)
+                S * norm.pdf(self.__d1(
+                    sigma=sigma, S=S, T=T, r=r, q=q,)) * sigma
+            ) / (2 * np.sqrt(T)) +
+            r * self.K * np.exp(-r * T) * norm.cdf(
+                -self.__d2(sigma=sigma, S=S, T=T, r=r, q=q,)
             ) -
-            self.q * self.S * np.exp(
-                -self.q * self.T
-            ) * norm.cdf(-self.__d1(sigma=sigma))
+            q * S * np.exp(
+                -q * T
+            ) * norm.cdf(-self.__d1(sigma=sigma, S=S, T=T, r=r, q=q,))
         )
 
     def __put_rho(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get put rho."""
         return 0.01 * (
-                -self.K * self.T * np.exp(
-                    -self.r * self.T
-                ) * norm.cdf(-self.__d2(sigma=sigma))
+                -self.K * T * np.exp(
+                    -r * T
+                ) * norm.cdf(-self.__d2(sigma=sigma, S=S, T=T, r=r, q=q,))
         )
 
     def __gamma(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get gamma."""
         return norm.pdf(
-            self.__d1(sigma=sigma)
-        ) / (self.S * sigma * np.sqrt(self.T)) * np.exp(-self.q * self.T)
+            self.__d1(sigma=sigma, S=S, T=T, r=r, q=q,)
+        ) / (S * sigma * np.sqrt(T)) * np.exp(-q * T)
 
     def __vega(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get vega."""
         return 0.01 * (
-                self.S * norm.pdf(self.__d1(sigma=sigma)) * np.sqrt(self.T)
-        ) * np.exp(-self.q * self.T)
+                S * norm.pdf(self.__d1(
+                    sigma=sigma, S=S, T=T, r=r, q=q,)
+                ) * np.sqrt(T)
+        ) * np.exp(-q * T)
 
     def _sigma_call(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             price: np.float = np.nan,
     ) -> np.float:
         """Implied sigma given call option value."""
         sigma_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
         return sigma_[
-            (np.abs(self._call_values(sigma=sigma_) - price)).argmin()]
+            (
+                np.abs(
+                    self._call_values(
+                        sigma=sigma_,
+                        S=S,
+                        T=T,
+                        r=r,
+                        q=q,
+                    ) - price
+                )
+            ).argmin()
+        ]
 
     def _sigma_put(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             price: np.float = np.nan,
     ) -> np.float:
         """Implied sigma given put option value."""
         sigma_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
         return sigma_[
-            (np.abs(self._put_values(sigma=sigma_) - price)).argmin()]
+            (
+                np.abs(
+                    self._put_values(
+                        sigma=sigma_,
+                        S=S,
+                        T=T,
+                        r=r,
+                        q=q,
+                    ) - price
+                )
+            ).argmin()
+        ]
 
     def _value(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             sigma: np.float = np.nan,
     ) -> dict:
         """Given sigma, the fair market value."""
-        __call_value = self._call_value(sigma=sigma)
-        __put_value = self._put_value(sigma=sigma)
-        __call_delta = self.__call_delta(sigma=sigma)
-        __put_delta = self.__put_delta(sigma=sigma)
-        __call_theta = self.__call_theta(sigma=sigma)
-        __put_theta = self.__put_theta(sigma=sigma)
-        __call_rho = self.__call_rho(sigma=sigma)
-        __put_rho = self.__put_rho(sigma=sigma)
-        __gamma = self.__gamma(sigma=sigma)
-        __vega = self.__vega(sigma=sigma)
-        __call_intrinsic = max(self.S - self.K, 0)
+        __call_value = self._call_value(sigma=sigma, S=S, T=T, r=r, q=q)
+        __put_value = self._put_value(sigma=sigma, S=S, T=T, r=r, q=q)
+        __call_delta = self.__call_delta(sigma=sigma, S=S, T=T, r=r, q=q)
+        __put_delta = self.__put_delta(sigma=sigma, S=S, T=T, r=r, q=q)
+        __call_theta = self.__call_theta(sigma=sigma, S=S, T=T, r=r, q=q)
+        __put_theta = self.__put_theta(sigma=sigma, S=S, T=T, r=r, q=q)
+        __call_rho = self.__call_rho(sigma=sigma, S=S, T=T, r=r, q=q)
+        __put_rho = self.__put_rho(sigma=sigma, S=S, T=T, r=r, q=q)
+        __gamma = self.__gamma(sigma=sigma, S=S, T=T, r=r, q=q)
+        __vega = self.__vega(sigma=sigma, S=S, T=T, r=r, q=q)
+        __call_intrinsic = max(S - self.K, 0)
         __call_extrinsic = __call_value - __call_intrinsic
-        __put_intrinsic = max(self.K - self.S, 0)
+        __put_intrinsic = max(self.K - S, 0)
         __put_extrinsic = __put_value - __put_intrinsic
         return {
             'call': {
@@ -281,14 +347,35 @@ class BlackScholes:
 
     def greeks(
             self,
+            S: np.float = np.nan,
+            T: np.float = np.nan,
+            r: np.float = np.nan,
+            q: np.float = np.nan,
             call_price: np.float = np.nan,
             put_price: np.float = np.nan,
     ) -> dict:
         """Get sigmas and calculate greeks for given options price."""
         return {
-            'call': self._value(sigma=self._sigma_call(price=call_price))[
-                'call'],
-            'put': self._value(sigma=self._sigma_put(price=put_price))['put'],
+            'call': self._value(
+                S=S,
+                T=T,
+                r=r,
+                q=q,
+                sigma=self._sigma_call(
+                    price=call_price,
+                    S=S, T=T, r=r, q=q,
+                )
+            )['call'],
+            'put': self._value(
+                S=S,
+                T=T,
+                r=r,
+                q=q,
+                sigma=self._sigma_put(
+                    price=put_price,
+                    S=S, T=T, r=r, q=q,
+                )
+            )['put'],
         }
 
 

@@ -262,13 +262,13 @@ class Derivative:
             'put': pd.DataFrame([]),
         }
         self.__call_price = np.vectorize(
-            lambda S, T, r, sigma: option._call_price(
-                S=S, T=T, r=r, sigma=sigma,
+            lambda S, T, r, q, sigma: option._call_price(
+                S=S, T=T, r=r, q=q, sigma=sigma,
             )
         )
         self.__put_price = np.vectorize(
-            lambda S, T, r, sigma: option._put_price(
-                S=S, T=T, r=r, sigma=sigma,
+            lambda S, T, r, q, sigma: option._put_price(
+                S=S, T=T, r=r, q=q, sigma=sigma,
             )
         )
         self._options_forecast = pd.DataFrame([])
@@ -319,6 +319,7 @@ class Derivative:
                     sigma=self.sim.V.values * call_iv_multiplier,
                     T=time,
                     r=interest_rate,
+                    q=self.option.q,
                 ),
                 index=self.sim.S.index,
                 columns=self.sim.S.columns,
@@ -336,6 +337,7 @@ class Derivative:
                     sigma=self.sim.V.values * put_iv_multiplier,
                     T=time,
                     r=interest_rate,
+                    q=self.option.q,
                 ),
                 index=self.sim.S.index,
                 columns=self.sim.S.columns,

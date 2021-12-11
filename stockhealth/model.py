@@ -49,6 +49,18 @@ class BlackScholes:
                 (self.r - self.q + sigma ** 2 / 2.0) * self.T
             ) / (sigma * np.sqrt(self.T)) - (sigma * np.sqrt(self.T))
         )
+        self.__f1 = lambda sigma, S, T, r, q: (
+            (
+                np.log(S / self.K) +
+                (r - q + sigma ** 2 / 2.0) * T
+            ) / (sigma * np.sqrt(T))
+        )
+        self.__f2 = lambda sigma, S, T, r, q: (
+            (
+                np.log(S / self.K) +
+                (r - q + sigma ** 2 / 2.0) * T
+            ) / (sigma * np.sqrt(T)) - (sigma * np.sqrt(T))
+        )
         self._call_values = np.vectorize(self._call_value)
         self._put_values = np.vectorize(self._put_value)
         self.values = np.vectorize(self._value)
@@ -93,19 +105,17 @@ class BlackScholes:
             S: np.float = np.nan,
             T: np.float = np.nan,
             r: np.float = np.nan,
+            q: np.float = 0.0,
             sigma: np.float = np.nan,
     ) -> np.float:
         """European Call option price given sigma, time and interest rate."""
-        S = S
         K = self.K
-        T = T
-        r = r
         return (
             S * norm.cdf(
-                self.__d1(sigma=sigma)
+                self.__f1(sigma=sigma, S=S, T=T, r=r, q=q)
             ) -
             K * norm.cdf(
-                self.__d2(sigma=sigma)
+                self.__f2(sigma=sigma, S=S, T=T, r=r, q=q)
             ) * np.exp(-r * T)
         )
 
@@ -114,18 +124,16 @@ class BlackScholes:
             S: np.float = np.nan,
             T: np.float = np.nan,
             r: np.float = np.nan,
+            q: np.float = 0.0,
             sigma: np.float = np.nan,
     ) -> np.float:
         """European Put option price given sigma, time and interest rate."""
-        S = S
         K = self.K
-        T = T
-        r = r
         return (
             np.exp(-r * T) * K * norm.cdf(
-                - self.__d2(sigma=sigma)
+                - self.__f2(sigma=sigma, S=S, T=T, r=r, q=q)
             ) - S * norm.cdf(
-                - self.__d1(sigma=sigma)
+                - self.__f1(sigma=sigma, S=S, T=T, r=r, q=q)
             )
         )
 

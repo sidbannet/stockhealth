@@ -109,12 +109,11 @@ class BlackScholes:
             sigma: np.float = np.nan,
     ) -> np.float:
         """European Call option price given sigma, time and interest rate."""
-        K = self.K
         return (
             S * norm.cdf(
                 self.__f1(sigma=sigma, S=S, T=T, r=r, q=q)
             ) -
-            K * norm.cdf(
+            self.K * norm.cdf(
                 self.__f2(sigma=sigma, S=S, T=T, r=r, q=q)
             ) * np.exp(-r * T)
         )
@@ -128,9 +127,8 @@ class BlackScholes:
             sigma: np.float = np.nan,
     ) -> np.float:
         """European Put option price given sigma, time and interest rate."""
-        K = self.K
         return (
-            np.exp(-r * T) * K * norm.cdf(
+            np.exp(-r * T) * self.K * norm.cdf(
                 - self.__f2(sigma=sigma, S=S, T=T, r=r, q=q)
             ) - S * norm.cdf(
                 - self.__f1(sigma=sigma, S=S, T=T, r=r, q=q)
@@ -149,7 +147,7 @@ class BlackScholes:
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get call theta."""
-        return 0.01 * (
+        return (
                 - np.exp(
                     -self.q * self.T
                 ) * (
@@ -166,7 +164,7 @@ class BlackScholes:
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get call rho."""
-        return 0.01 * (
+        return (
             self.K * self.T * np.exp(
                 -self.r * self.T
             ) * norm.cdf(self.__d2(sigma=sigma))
@@ -184,7 +182,7 @@ class BlackScholes:
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get put theta."""
-        return 0.01 * (
+        return (
             - np.exp(
                 -self.q * self.T
             ) * (
@@ -203,7 +201,7 @@ class BlackScholes:
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get put rho."""
-        return 0.01 * (
+        return (
                 -self.K * self.T * np.exp(
                     -self.r * self.T
                 ) * norm.cdf(-self.__d2(sigma=sigma))
@@ -223,7 +221,7 @@ class BlackScholes:
             sigma: np.float = np.nan,
     ) -> np.float:
         """Get vega."""
-        return 0.01 * (
+        return (
                 self.S * norm.pdf(self.__d1(sigma=sigma)) * np.sqrt(self.T)
         ) * np.exp(-self.q * self.T)
 
@@ -297,6 +295,193 @@ class BlackScholes:
             'call': self._value(sigma=self._sigma_call(price=call_price))[
                 'call'],
             'put': self._value(sigma=self._sigma_put(price=put_price))['put'],
+        }
+
+    @property
+    def _greeks_calls(
+        K: np.array,
+        S: np.float = np.nan,
+        T: np.float = np.nan,
+        r: np.float = np.nan,
+        q: np.float = 0.0,
+    ) -> dict:
+        """Get sigmas, and greeks for calls given stock underlying."""
+        f1__ = lambda sigma, S, K, T, r, q: (
+            (
+                np.log(S / K) +
+                (r - q + sigma ** 2 / 2.0) * T
+            ) / (sigma * np.sqrt(T))
+        ) 
+        f2__ = lambda sigma, S, K, T, r, q: (
+            (
+                np.log(S / K) +
+                (r - q + sigma ** 2 / 2.0) * T
+            ) / (sigma * np.sqrt(T)) - (sigma * np.sqrt(T))
+        ) 
+        __call_prices = np.vectorize(
+            lambda sigmas, Ks: (
+                S * norm.cdf(
+                    f1__(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                ) - Ks * norm.cdf(
+                    f2__(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                ) * np.exp(-r * T)
+            )
+        )
+        __f1 = np.vectorize(
+            lambda sigmas, Ks: f1__(S=S, K=Ks, T=T, r=r, q=q, sigma=sigmas)
+        )
+        __f2 = np.vectorize(
+            lambda sigmas, Ks: __f2(S=S, K=Ks, T=T, r=r, q=q, sigma=sigmas)
+        )
+        sigmas_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
+        sigmas = sigmas_[
+            (np.abs(__call_prices(sigmas_, K)) - K).argmin()
+        ]
+        __deltas = np.vectorize(
+            lambda sigmas, Ks: norm.cdf(
+                __f1(
+                    sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q,
+                )
+            ) * np.exp(-q * T) 
+        )
+        deltas = __deltas(sigmas=sigmas, Ks=K)
+        __gammas = np.vectorize(
+            lambda sigmas, Ks: norm.pdf(
+                __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+            ) / (S * sigmas * np.sqrt(T)) * np.exp(-q * T)
+        )
+        gammas = __gammas(sigmas=sigmas, Ks=K)
+        __vegas = np.vectorize(
+            lambda sigmas, Ks: (
+                S * norm.pdf(
+                    __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                ) * np.sqrt(T)
+            ) * np.exp(-q * T)
+        )
+        vegas = __vegas(sigmas=sigmas, Ks=K)
+        __rhos = np.vectorize(
+            lambda sigmas, Ks: (
+                Ks * T * np.exp(-r * T) * norm.cdf(
+                    __f2(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                )
+            )
+        )
+        rhos = __rhos(sigmas=sigmas, Ks=K)
+        __thetas = np.vectorize(
+            lambda sigmas, Ks: (
+                - np.exp(-q * T) * (
+                    S * norm.pdf(
+                        __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                    ) * sigmas
+                ) / (2 * np.sqrt(T)) -
+                r * Ks * np.exp(-r * T) * norm.cdf(
+                    __f2(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                ) + q * S * np.exp(-q * T) * norm.cdf(
+                    __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                )
+            ) 
+        )
+        thetas = __thetas(sigmas=sigmas, Ks=K)
+        return {
+            'delta': deltas,
+            'gamma': gammas,
+            'rho': rhos,
+            'vega': vegas,
+            'theta': thetas,
+            'sigma': sigmas,
+        }
+
+    @property
+    def _greeks_puts(
+        K: np.array,
+        S: np.float = np.nan,
+        T: np.float = np.nan,
+        r: np.float = np.nan,
+        q: np.float = 0.0,
+    ) -> dict:
+        """Get sigmas, and greeks for calls given stock underlying."""
+        f1__ = lambda sigma, S, K, T, r, q: (
+            (
+                np.log(S / K) +
+                (r - q + sigma ** 2 / 2.0) * T
+            ) / (sigma * np.sqrt(T))
+        ) 
+        f2__ = lambda sigma, S, K, T, r, q: (
+            (
+                np.log(S / K) +
+                (r - q + sigma ** 2 / 2.0) * T
+            ) / (sigma * np.sqrt(T)) - (sigma * np.sqrt(T))
+        ) 
+        __put_prices = np.vectorize(
+            lambda sigmas, Ks: (
+                np.exp(-r * T) * Ks * norm.cdf(
+                    - f2__(sigma=sigmas, S=S, T=T, r=r, q=q)
+                ) - S * norm.cdf(
+                    - f1__(sigma=sigmas, S=S, T=T, r=r, q=q)
+                )
+            )
+        )
+        __f1 = np.vectorize(
+            lambda sigmas, Ks: f1__(S=S, K=Ks, T=T, r=r, q=q, sigma=sigmas)
+        )
+        __f2 = np.vectorize(
+            lambda sigmas, Ks: __f2(S=S, K=Ks, T=T, r=r, q=q, sigma=sigmas)
+        )
+        sigmas_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
+        sigmas = sigmas_[
+            (np.abs(__put_prices(sigmas_, K)) - K).argmin()
+        ]
+        __deltas = np.vectorize(
+            lambda sigmas, Ks: - norm.cdf(
+                -__f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+            ) * np.exp(-q * T)
+        )
+        deltas = __deltas(sigmas=sigmas, Ks=K)
+        __gammas = np.vectorize(
+            lambda sigmas, Ks: norm.pdf(
+                __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+            ) / (S * sigmas * np.sqrt(T)) * np.exp(-q * T)
+        )
+        gammas = __gammas(sigmas=sigmas, Ks=K)
+        __vegas = np.vectorize(
+            lambda sigmas, Ks: (
+                S * norm.pdf(
+                    __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                ) * np.sqrt(T)
+            ) * np.exp(-q * T)
+        )
+        vegas = __vegas(sigmas=sigmas, Ks=K)
+        __rhos = np.vectorize(
+            lambda sigmas, Ks: (
+                -Ks * T * np.exp(
+                    -r * T
+                ) * norm.cdf(-__f2(sigma=sigmas, K=Ks, S=S, T=T, r=r, q=q))
+        ) 
+        )
+        rhos = __rhos(sigmas=sigmas, Ks=K)
+        __thetas = np.vectorize(
+            lambda sigmas, Ks: (
+                - np.exp(
+                    -q * T
+                ) * (
+                    S * norm.pdf(__f1(sigma=sigmas, K=Ks, S=S, T=T, r=r, q=q)) * sigmas
+                ) / (2 * np.sqrt(T)) +
+                r * K * np.exp(-r * T) * norm.cdf(
+                    -__f2(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                ) -
+                q * S * np.exp(
+                    -q * T
+                ) * norm.cdf(-__f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q))
+            ) 
+        )
+        thetas = __thetas(sigmas=sigmas, Ks=K)
+        return {
+            'delta': deltas,
+            'gamma': gammas,
+            'rho': rhos,
+            'vega': vegas,
+            'theta': thetas,
+            'sigma': sigmas,
         }
 
 

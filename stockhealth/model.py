@@ -13,7 +13,7 @@ _NUMBER_OF_TRADING_DAYS_PER_YEAR: float = 252.75
 _NUMBER_OF_CALENDAR_DAYS_PER_YEAR: float = 365.2425
 
 
-# noinspection PyPep8Naming
+# noinspection PyPep8Naming,PyUnresolvedReferences
 class BlackScholes:
     """Black-Scholes model to determine fair European options price."""
 
@@ -49,17 +49,17 @@ class BlackScholes:
                 (self.r - self.q + sigma ** 2 / 2.0) * self.T
             ) / (sigma * np.sqrt(self.T)) - (sigma * np.sqrt(self.T))
         )
-        self.__f1 = lambda sigma, S, T, r, q: (
+        self.__f1 = lambda sigmas, Ss, Ts, rs, qs: (
             (
-                np.log(S / self.K) +
-                (r - q + sigma ** 2 / 2.0) * T
-            ) / (sigma * np.sqrt(T))
+                np.log(Ss / self.K) +
+                (rs - qs + sigmas ** 2 / 2.0) * Ts
+            ) / (sigmas * np.sqrt(Ts))
         )
-        self.__f2 = lambda sigma, S, T, r, q: (
+        self.__f2 = lambda sigmas, Ss, Ts, rs, qs: (
             (
-                np.log(S / self.K) +
-                (r - q + sigma ** 2 / 2.0) * T
-            ) / (sigma * np.sqrt(T)) - (sigma * np.sqrt(T))
+                np.log(Ss / self.K) +
+                (rs - qs + sigmas ** 2 / 2.0) * T
+            ) / (sigmas * np.sqrt(Ts)) - (sigmas * np.sqrt(T))
         )
         self._call_values = np.vectorize(self._call_value)
         self._put_values = np.vectorize(self._put_value)
@@ -111,10 +111,10 @@ class BlackScholes:
         """European Call option price given sigma, time and interest rate."""
         return (
             S * norm.cdf(
-                self.__f1(sigma=sigma, S=S, T=T, r=r, q=q)
+                self.__f1(sigmas=sigma, Ss=S, Ts=T, rs=r, qs=q)
             ) -
             self.K * norm.cdf(
-                self.__f2(sigma=sigma, S=S, T=T, r=r, q=q)
+                self.__f2(sigmas=sigma, Ss=S, Ts=T, rs=r, qs=q)
             ) * np.exp(-r * T)
         )
 
@@ -129,9 +129,9 @@ class BlackScholes:
         """European Put option price given sigma, time and interest rate."""
         return (
             np.exp(-r * T) * self.K * norm.cdf(
-                - self.__f2(sigma=sigma, S=S, T=T, r=r, q=q)
+                - self.__f2(sigmas=sigma, Ss=S, Ts=T, rs=r, qs=q)
             ) - S * norm.cdf(
-                - self.__f1(sigma=sigma, S=S, T=T, r=r, q=q)
+                - self.__f1(sigmas=sigma, Ss=S, Ts=T, rs=r, qs=q)
             )
         )
 
@@ -297,191 +297,204 @@ class BlackScholes:
             'put': self._value(sigma=self._sigma_put(price=put_price))['put'],
         }
 
-    @property
-    def _greeks_calls(
-        K: np.array,
-        S: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = 0.0,
-    ) -> dict:
-        """Get sigmas, and greeks for calls given stock underlying."""
-        f1__ = lambda sigma, S, K, T, r, q: (
-            (
+    # noinspection PyPep8Naming
+    class Greeks:
+        """Class for getting greeks using Black-Scholes (European Options) model."""
+
+        def __init__(self):
+            """Instantiate the class."""
+            self.__gammas = np.vectorize(
+                lambda sigmas, Ks, Ss, Ts, rs, qs: norm.pdf(
+                    self.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
+                ) / (Ss * sigmas * np.sqrt(Ts)) * np.exp(-qs * Ts)
+            )
+            self.__vegas = np.vectorize(
+                lambda sigmas, Ks, Ss, Ts, rs, qs: (
+                    Ss * norm.pdf(
+                        self.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
+                    ) * np.sqrt(Ts)
+                ) * np.exp(-qs * Ts)
+            )
+
+        @staticmethod
+        def __f1(sigma, S, K, T, r, q):
+            return (
                 np.log(S / K) +
                 (r - q + sigma ** 2 / 2.0) * T
             ) / (sigma * np.sqrt(T))
-        ) 
-        f2__ = lambda sigma, S, K, T, r, q: (
-            (
+
+        @staticmethod
+        def __f2(sigma, S, K, T, r, q):
+            return (
                 np.log(S / K) +
                 (r - q + sigma ** 2 / 2.0) * T
             ) / (sigma * np.sqrt(T)) - (sigma * np.sqrt(T))
-        ) 
+
+    def calls(
+        self,
+        strikes: np.array,
+        prices: np.array,
+        times_to_expiry: np.array,
+        interest_rate: np.float = np.nan,
+        dividend_yield: np.float = 0.0,
+    ) -> dict:
+        """Get sigmas, and greeks for calls given stock underlying."""
+        Ks_in = strikes
+        Ss_in = prices
+        Ts_in = times_to_expiry
+        rs_in = np.full_like(strikes, interest_rate)
+        qs_in = np.full_like(strikes, dividend_yield)
         __call_prices = np.vectorize(
-            lambda sigmas, Ks: (
-                S * norm.cdf(
-                    f1__(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+            lambda sigmas, Ks, Ss, Ts, rs, qs: (
+                Ss * norm.cdf(
+                    self.Greeks.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
                 ) - Ks * norm.cdf(
-                    f2__(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
-                ) * np.exp(-r * T)
+                    self.Greeks.__f2(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
+                ) * np.exp(-rs * Ts)
             )
-        )
-        __f1 = np.vectorize(
-            lambda sigmas, Ks: f1__(S=S, K=Ks, T=T, r=r, q=q, sigma=sigmas)
-        )
-        __f2 = np.vectorize(
-            lambda sigmas, Ks: __f2(S=S, K=Ks, T=T, r=r, q=q, sigma=sigmas)
         )
         sigmas_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
-        sigmas = sigmas_[
-            (np.abs(__call_prices(sigmas_, K)) - K).argmin()
+        sigmas_in = sigmas_[
+            (
+                np.abs(
+                    __call_prices(
+                        sigmas=sigmas_,
+                        Ks=Ks_in,
+                        Ss=Ss_in,
+                        Ts=Ts_in,
+                        rs=rs_in,
+                        qs=qs_in,
+                    )
+                ) - Ks_in
+            ).argmin()
         ]
         __deltas = np.vectorize(
-            lambda sigmas, Ks: norm.cdf(
-                __f1(
-                    sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q,
+            lambda sigmas, Ks, Ss, Ts, rs, qs: norm.cdf(
+                self.Greeks.__f1(
+                    sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs,
                 )
-            ) * np.exp(-q * T) 
+            ) * np.exp(-qs * Ts) 
         )
-        deltas = __deltas(sigmas=sigmas, Ks=K)
-        __gammas = np.vectorize(
-            lambda sigmas, Ks: norm.pdf(
-                __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
-            ) / (S * sigmas * np.sqrt(T)) * np.exp(-q * T)
+        deltas = __deltas(
+            sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in
         )
-        gammas = __gammas(sigmas=sigmas, Ks=K)
-        __vegas = np.vectorize(
-            lambda sigmas, Ks: (
-                S * norm.pdf(
-                    __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
-                ) * np.sqrt(T)
-            ) * np.exp(-q * T)
-        )
-        vegas = __vegas(sigmas=sigmas, Ks=K)
+        gammas = self.Greeks.__gammas(
+            sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
+        vegas = self.Greeks.__vegas(sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
         __rhos = np.vectorize(
-            lambda sigmas, Ks: (
-                Ks * T * np.exp(-r * T) * norm.cdf(
-                    __f2(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+            lambda sigmas, Ks, Ss, Ts, rs, qs: (
+                Ks * Ts * np.exp(-rs * Ts) * norm.cdf(
+                    self.Greeks.__f2(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
                 )
             )
         )
-        rhos = __rhos(sigmas=sigmas, Ks=K)
+        rhos = __rhos(sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
         __thetas = np.vectorize(
-            lambda sigmas, Ks: (
-                - np.exp(-q * T) * (
-                    S * norm.pdf(
-                        __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+            lambda sigmas, Ks, Ss, Ts, rs, qs: (
+                - np.exp(-qs * Ts) * (
+                    Ss * norm.pdf(
+                        self.Greeks.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
                     ) * sigmas
-                ) / (2 * np.sqrt(T)) -
-                r * Ks * np.exp(-r * T) * norm.cdf(
-                    __f2(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
-                ) + q * S * np.exp(-q * T) * norm.cdf(
-                    __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
+                ) / (2 * np.sqrt(Ts)) -
+                rs * Ks * np.exp(-rs * Ts) * norm.cdf(
+                    self.Greeks.__f2(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
+                ) + qs * Ss * np.exp(-qs * Ts) * norm.cdf(
+                    self.Greeks.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
                 )
             ) 
         )
-        thetas = __thetas(sigmas=sigmas, Ks=K)
+        thetas = __thetas(sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, r=rs_in, q=qs_in)
         return {
             'delta': deltas,
             'gamma': gammas,
             'rho': rhos,
             'vega': vegas,
             'theta': thetas,
-            'sigma': sigmas,
+            'sigma': sigmas_in,
         }
 
-    @property
-    def _greeks_puts(
-        K: np.array,
-        S: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = 0.0,
+    def puts(
+        self,
+        strikes: np.array,
+        prices: np.array,
+        times_to_expiry: np.array,
+        interest_rate: np.float = np.nan,
+        dividend_yield: np.float = 0.0,
     ) -> dict:
         """Get sigmas, and greeks for calls given stock underlying."""
-        f1__ = lambda sigma, S, K, T, r, q: (
-            (
-                np.log(S / K) +
-                (r - q + sigma ** 2 / 2.0) * T
-            ) / (sigma * np.sqrt(T))
-        ) 
-        f2__ = lambda sigma, S, K, T, r, q: (
-            (
-                np.log(S / K) +
-                (r - q + sigma ** 2 / 2.0) * T
-            ) / (sigma * np.sqrt(T)) - (sigma * np.sqrt(T))
-        ) 
+        Ks_in = strikes
+        Ss_in = prices
+        Ts_in = times_to_expiry
+        rs_in = np.full_like(strikes, interest_rate)
+        qs_in = np.full_like(strikes, dividend_yield)
         __put_prices = np.vectorize(
-            lambda sigmas, Ks: (
-                np.exp(-r * T) * Ks * norm.cdf(
-                    - f2__(sigma=sigmas, S=S, T=T, r=r, q=q)
-                ) - S * norm.cdf(
-                    - f1__(sigma=sigmas, S=S, T=T, r=r, q=q)
+            lambda sigmas, Ks, Ss, Ts, rs, qs: (
+                np.exp(-rs * Ts) * Ks * norm.cdf(
+                    - self.Greeks.__f2(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
+                ) - Ss * norm.cdf(
+                    - self.Greeks.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
                 )
             )
         )
-        __f1 = np.vectorize(
-            lambda sigmas, Ks: f1__(S=S, K=Ks, T=T, r=r, q=q, sigma=sigmas)
-        )
-        __f2 = np.vectorize(
-            lambda sigmas, Ks: __f2(S=S, K=Ks, T=T, r=r, q=q, sigma=sigmas)
-        )
         sigmas_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
-        sigmas = sigmas_[
-            (np.abs(__put_prices(sigmas_, K)) - K).argmin()
+        sigmas_in = sigmas_[
+            (
+                np.abs(
+                    __put_prices(
+                        sigmas=sigmas_,
+                        Ks=Ks_in,
+                        Ss=Ss_in,
+                        Ts=Ts_in,
+                        rs=rs_in,
+                        qs=qs_in,
+                    )
+                ) - Ks_in
+            ).argmin()
         ]
         __deltas = np.vectorize(
-            lambda sigmas, Ks: - norm.cdf(
-                -__f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
-            ) * np.exp(-q * T)
+            lambda sigmas, Ks, Ss, Ts, rs, qs: - norm.cdf(
+                -self.Greeks.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
+            ) * np.exp(-qs * Ts)
         )
-        deltas = __deltas(sigmas=sigmas, Ks=K)
-        __gammas = np.vectorize(
-            lambda sigmas, Ks: norm.pdf(
-                __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
-            ) / (S * sigmas * np.sqrt(T)) * np.exp(-q * T)
-        )
-        gammas = __gammas(sigmas=sigmas, Ks=K)
-        __vegas = np.vectorize(
-            lambda sigmas, Ks: (
-                S * norm.pdf(
-                    __f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
-                ) * np.sqrt(T)
-            ) * np.exp(-q * T)
-        )
-        vegas = __vegas(sigmas=sigmas, Ks=K)
+        deltas = __deltas(
+            sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
+        gammas = self.Greeks.__gammas(
+            sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
+        vegas = self.Greeks.__vegas(
+            sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
         __rhos = np.vectorize(
-            lambda sigmas, Ks: (
-                -Ks * T * np.exp(
-                    -r * T
-                ) * norm.cdf(-__f2(sigma=sigmas, K=Ks, S=S, T=T, r=r, q=q))
-        ) 
-        )
-        rhos = __rhos(sigmas=sigmas, Ks=K)
-        __thetas = np.vectorize(
-            lambda sigmas, Ks: (
-                - np.exp(
-                    -q * T
-                ) * (
-                    S * norm.pdf(__f1(sigma=sigmas, K=Ks, S=S, T=T, r=r, q=q)) * sigmas
-                ) / (2 * np.sqrt(T)) +
-                r * K * np.exp(-r * T) * norm.cdf(
-                    -__f2(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q)
-                ) -
-                q * S * np.exp(
-                    -q * T
-                ) * norm.cdf(-__f1(sigma=sigmas, S=S, K=Ks, T=T, r=r, q=q))
+            lambda sigmas, Ks, Ss, Ts, rs, qs: (
+                -Ks * Ts * np.exp(
+                    -rs * Ts
+                ) * norm.cdf(-self.Greeks.__f2(sigma=sigmas, K=Ks, S=Ss, T=Ts, r=rs, q=qs))
             ) 
         )
-        thetas = __thetas(sigmas=sigmas, Ks=K)
+        rhos = __rhos(sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
+        __thetas = np.vectorize(
+            lambda sigmas, Ks, Ss, Ts, rs, qs: (
+                - np.exp(
+                    -qs * Ts
+                ) * (
+                    Ss * norm.pdf(
+                        self.Greeks.__f1(sigma=sigmas, K=Ks, S=Ss, T=Ts, r=rs, q=qs)
+                    ) * sigmas
+                ) / (2 * np.sqrt(Ts)) +
+                rs * Ks * np.exp(-rs * Ts) * norm.cdf(
+                    -self.Greeks.__f2(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
+                ) -
+                qs * Ss * np.exp(
+                    -qs * Ts
+                ) * norm.cdf(-self.Greeks.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs))
+            ) 
+        )
+        thetas = __thetas(sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
         return {
             'delta': deltas,
             'gamma': gammas,
             'rho': rhos,
             'vega': vegas,
             'theta': thetas,
-            'sigma': sigmas,
+            'sigma': sigmas_in,
         }
 
 

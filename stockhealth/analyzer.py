@@ -221,63 +221,36 @@ class TimeSeries:
             date.today() - timedelta(_NCD):
         ].sum() / self.history__['Close'].iloc[-1]
 
+    # noinspection PyUnresolvedReferences
+    @staticmethod
     def __get_greeks(
-            self,
+            type_of_transaction: TransactionType,
             time: np.array,
             price: np.array,
             strike: np.array,
             r: np.float,
-            type_of_transaction: TransactionType,
+            q: np.float = 0.0,
     ) -> dict:
         """Get greeks from the options chain."""
-        # //todo: Make this vectorized method
-        delta, gamma, vega, theta, rho, intrinsic, extrinsic = [], [], [], [], [], [], []
-
-        def __option(strike_price, time_to_expiry) -> Bs:
-            """Get Black-Scholes Options object."""
-            return Bs(
-                S=self.history__['Close'].iloc[-1],
-                K=strike_price,
-                T=time_to_expiry,
-                r=r,
-                q=self.dividend_yield,
+        if type_of_transaction.value == 'calls':
+            greeks = Bs.Greeks.calls(
+                prices=price,
+                strikes=strike,
+                times_to_expiry=time,
+                interest_rate=r,
+                dividend_yeild=q,
             )
-        for (k, t, p) in zip(strike, time, price):
-            if type_of_transaction.value == 'calls':
-                greeks = __option(
-                    strike_price=k, time_to_expiry=t
-                ).greeks(call_price=p)['call']
-            elif type_of_transaction.value == 'puts':
-                greeks = __option(
-                    strike_price=k, time_to_expiry=t,
-                ).greeks(put_price=p)['put']
-            else:
-                greeks = {
-                    'delta': np.nan,
-                    'gamma': np.nan,
-                    'vega': np.nan,
-                    'theta': np.nan,
-                    'rho': np.nan,
-                    'intrinsic': np.nan,
-                    'extrinsic': np.nan,
-                }
-            delta.append(greeks['delta'])
-            gamma.append(greeks['gamma'])
-            vega.append(greeks['vega'])
-            theta.append(greeks['theta'])
-            rho.append(greeks['rho'])
-            intrinsic.append(greeks['intrinsic'])
-            extrinsic.append(greeks['extrinsic'])
-
-        return {
-            'delta': delta,
-            'gamma': gamma,
-            'vega': vega,
-            'theta': theta,
-            'rho': rho,
-            'intrinsic': intrinsic,
-            'extrinsic': extrinsic,
-        }
+        elif type_of_transaction.value == 'puts':
+            greeks = Bs.Greeks.puts(
+                prices=price,
+                strikes=strike,
+                times_to_expiry=time,
+                interest_rate=r,
+                divident_yeild=q,
+            )
+        else:
+            greeks = {}
+        return greeks 
 
     def options_chain__(
             self,
@@ -301,6 +274,7 @@ class TimeSeries:
                 price=chain['lastPrice'].values,
                 strike=chain['strike'].values,
                 r=interest_rate,
+                q=self.dividend_yield,
                 type_of_transaction=type_of_transaction,
             )
             return chain.join(pd.DataFrame(greeks)).set_index('strike')

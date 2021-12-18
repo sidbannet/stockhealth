@@ -15,6 +15,7 @@ from enum import Enum, unique
 from collections import namedtuple
 import yfinance as yf
 from stockhealth.model import BlackScholes as Bs
+from stockhealth.utilities.models import Greeks as BsGreeks
 from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
 
 Transaction = namedtuple('forecast', ['simulation', 'amount'])
@@ -232,21 +233,22 @@ class TimeSeries:
             q: np.float = 0.0,
     ) -> dict:
         """Get greeks from the options chain."""
+        mdl = BsGreeks()
         if type_of_transaction.value == 'calls':
-            greeks = Bs.Greeks.calls(
+            greeks = mdl.calls(
                 prices=price,
                 strikes=strike,
                 times_to_expiry=time,
                 interest_rate=r,
-                dividend_yeild=q,
+                dividend_yield=q,
             )
         elif type_of_transaction.value == 'puts':
-            greeks = Bs.Greeks.puts(
+            greeks = mdl.puts(
                 prices=price,
                 strikes=strike,
                 times_to_expiry=time,
                 interest_rate=r,
-                divident_yeild=q,
+                dividend_yield=q,
             )
         else:
             greeks = {}

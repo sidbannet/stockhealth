@@ -295,6 +295,8 @@ class European(BlackScholes):
         self.__put_rho = lambda sigma: self._put_rho(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
         self.__gamma = lambda sigma: self._gamma(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
         self.__vega = lambda sigma: self._vega(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__sigma_call = lambda price: self._sigma_call(S=S, K=K, T=T, r=r, q=q, price=price)
+        self.__sigma_put = lambda price: self._sigma_put(S=S, K=K, T=T, r=r, q=q, price=price)
         self._call_values = np.vectorize(self._call_value)
         self._put_values = np.vectorize(self._put_value)
         self.values = np.vectorize(self._value)
@@ -348,8 +350,8 @@ class European(BlackScholes):
     ) -> dict:
         """Get sigmas and calculate greeks for given options price."""
         return {
-            'call': self._value(sigma=self._sigma_call(price=call_price))['call'],
-            'put': self._value(sigma=self._sigma_put(price=put_price))['put'],
+            'call': self._value(sigma=self.__sigma_call(price=call_price))['call'],
+            'put': self._value(sigma=self.__sigma_put(price=put_price))['put'],
         }
 
 

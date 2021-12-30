@@ -86,7 +86,7 @@ class BlackScholes:
             )
         )
 
-    def __call_delta(
+    def _call_delta(
         self,
         S: np.float = np.nan,
         K: np.float = np.nan,
@@ -100,7 +100,7 @@ class BlackScholes:
             self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
         ) * np.exp(-q * T)
 
-    def __call_theta(
+    def _call_theta(
         self,
         S: np.float = np.nan,
         K: np.float = np.nan,
@@ -122,7 +122,7 @@ class BlackScholes:
             norm.cdf(self.__f1(sigmas=sigma, Ss=S, Ts=T, Ks=K, rs=r, qs=q))
         )
 
-    def __call_rho(
+    def _call_rho(
         self,
         S: np.float = np.nan,
         K: np.float = np.nan,
@@ -138,7 +138,7 @@ class BlackScholes:
             ) * norm.cdf(self.__f2(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q))
         )
 
-    def __put_delta(
+    def _put_delta(
         self,
         S: np.float = np.nan,
         K: np.float = np.nan,
@@ -152,7 +152,7 @@ class BlackScholes:
             -self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
         ) * np.exp(-q * T)
 
-    def __put_theta(
+    def _put_theta(
         self,
         S: np.float = np.nan,
         K: np.float = np.nan,
@@ -176,7 +176,7 @@ class BlackScholes:
             ) * norm.cdf(-self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q))
         )
 
-    def __put_rho(
+    def _put_rho(
         self,
         S: np.float = np.nan,
         K: np.float = np.nan,
@@ -192,7 +192,7 @@ class BlackScholes:
             ) * norm.cdf(-self.__f2(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q))
         )
 
-    def __gamma(
+    def _gamma(
         self,
         S: np.float = np.nan,
         K: np.float = np.nan,
@@ -206,7 +206,7 @@ class BlackScholes:
             self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
         ) / (S * sigma * np.sqrt(T)) * np.exp(-q * T)
 
-    def __vega(
+    def _vega(
         self,
         S: np.float = np.nan,
         K: np.float = np.nan,
@@ -298,14 +298,14 @@ class European(BlackScholes):
         """Given sigma, the fair market value."""
         __call_value = self._call_value(sigma=sigma)
         __put_value = self._put_value(sigma=sigma)
-        __call_delta = self.__call_delta(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
-        __put_delta = self.__put_delta(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
-        __call_theta = self.__call_theta(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
-        __put_theta = self.__put_theta(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
-        __call_rho = self.__call_rho(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
-        __put_rho = self.__put_rho(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
-        __gamma = self.__gamma(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
-        __vega = self.__vega(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
+        __call_delta = self._call_delta(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
+        __put_delta = self._put_delta(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
+        __call_theta = self._call_theta(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
+        __put_theta = self._put_theta(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
+        __call_rho = self._call_rho(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
+        __put_rho = self._put_rho(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
+        __gamma = self._gamma(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
+        __vega = self._vega(sigma=sigma, S=self.S, K=self.K, T=self.T, r=self.r, q=self.q)
         __call_intrinsic = max(self.S - self.K, 0)
         __call_extrinsic = __call_value - __call_intrinsic
         __put_intrinsic = max(self.K - self.S, 0)
@@ -334,9 +334,9 @@ class European(BlackScholes):
         }
 
     def greeks(
-            self,
-            call_price: np.float = np.nan,
-            put_price: np.float = np.nan,
+        self,
+        call_price: np.float = np.nan,
+        put_price: np.float = np.nan,
     ) -> dict:
         """Get sigmas and calculate greeks for given options price."""
         return {

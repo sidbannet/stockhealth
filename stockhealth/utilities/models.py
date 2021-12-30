@@ -24,7 +24,7 @@ class Greeks:
         )
         self.__vegas = np.vectorize(
             lambda sigmas, Ks, Ss, Ts, rs, qs: (
-                Ss * norm.pdf(
+                0.01 * Ss * norm.pdf(
                     self.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
                 ) * np.sqrt(Ts)
             ) * np.exp(-qs * Ts)
@@ -119,14 +119,14 @@ class Greeks:
         vegas = self.__vegas(sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
         __rhos = np.vectorize(
             lambda sigmas, Ks, Ss, Ts, rs, qs: (
-                Ks * Ts * np.exp(-rs * Ts) * norm.cdf(
+                0.01 * Ks * Ts * np.exp(-rs * Ts) * norm.cdf(
                     self.__f2(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
                 )
             )
         )
         rhos = __rhos(sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
         __thetas = np.vectorize(
-            lambda sigmas, Ks, Ss, Ts, rs, qs: (
+            lambda sigmas, Ks, Ss, Ts, rs, qs: 0.01 * (
                 - np.exp(-qs * Ts) * (
                     Ss * norm.pdf(
                         self.__f1(sigma=sigmas, S=Ss, K=Ks, T=Ts, r=rs, q=qs)
@@ -183,15 +183,15 @@ class Greeks:
         vegas = self.__vegas(
             sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
         __rhos = np.vectorize(
-            lambda sigmas, Ks, Ss, Ts, rs, qs: (
-                -Ks * Ts * np.exp(
+            lambda sigmas, Ks, Ss, Ts, rs, qs: 0.01 * (
+                - Ks * Ts * np.exp(
                     -rs * Ts
                 ) * norm.cdf(-self.__f2(sigma=sigmas, K=Ks, S=Ss, T=Ts, r=rs, q=qs))
             ) 
         )
         rhos = __rhos(sigmas=sigmas_in, Ks=Ks_in, Ss=Ss_in, Ts=Ts_in, rs=rs_in, qs=qs_in)
         __thetas = np.vectorize(
-            lambda sigmas, Ks, Ss, Ts, rs, qs: (
+            lambda sigmas, Ks, Ss, Ts, rs, qs: 0.01 * (
                 - np.exp(
                     -qs * Ts
                 ) * (

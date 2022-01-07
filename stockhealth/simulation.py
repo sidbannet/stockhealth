@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import datetime, timedelta
-from stockhealth.model import BlackScholes
+from stockhealth.model import European
 from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
 from stockhealth.utilities.calendar import dt as date_difference
@@ -232,7 +232,7 @@ class Derivative:
     # noinspection PyPep8Naming,PyProtectedMember
     def __init__(
             self,
-            option: BlackScholes = None,
+            option: European = None,
             simulation_of_underlying: MonteCarlo = None,
             call_price: np.float = np.nan,
             put_price: np.float = np.nan,
@@ -255,20 +255,20 @@ class Derivative:
         }
         self.__initial_call = call_price
         self.__initial_put = put_price
-        self.__initial_call_iv = option._sigma_call(price=call_price)
-        self.__initial_put_iv = option._sigma_put(price=put_price)
+        self.__initial_call_iv = option.sigma_call__(price=call_price)
+        self.__initial_put_iv = option.sigma_put__(price=put_price)
         self.price = {
             'call': pd.DataFrame([]),
             'put': pd.DataFrame([]),
         }
         self.__call_price = np.vectorize(
-            lambda S, T, r, sigma: option._call_price(
-                S=S, T=T, r=r, sigma=sigma,
+            lambda S, K, T, r, q, sigma: option._call_price(
+                S=S, K=K, T=T, r=r, q=q, sigma=sigma,
             )
         )
         self.__put_price = np.vectorize(
-            lambda S, T, r, sigma: option._put_price(
-                S=S, T=T, r=r, sigma=sigma,
+            lambda S, K, T, r, q, sigma: option._put_price(
+                S=S, K=K, T=T, r=r, q=q, sigma=sigma,
             )
         )
         self._options_forecast = pd.DataFrame([])
@@ -312,13 +312,17 @@ class Derivative:
                 (number_of_instances, 1),
             )
         )
+        dividend_rate = np.full_like(interest_rate, fill_value=self.option.q)
+        strike = np.full_like(interest_rate, fill_value=self.option.K)
         if self._solve_for_call:
             self.price['call'] = pd.DataFrame(
                 data=self.__call_price(
                     S=self.sim.S.values,
+                    K=strike,
                     sigma=self.sim.V.values * call_iv_multiplier,
                     T=time,
                     r=interest_rate,
+                    q=dividend_rate,
                 ),
                 index=self.sim.S.index,
                 columns=self.sim.S.columns,
@@ -333,9 +337,11 @@ class Derivative:
             self.price['put'] = pd.DataFrame(
                 data=self.__put_price(
                     S=self.sim.S.values,
+                    K=strike,
                     sigma=self.sim.V.values * put_iv_multiplier,
                     T=time,
                     r=interest_rate,
+                    q=dividend_rate,
                 ),
                 index=self.sim.S.index,
                 columns=self.sim.S.columns,

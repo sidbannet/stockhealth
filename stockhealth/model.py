@@ -63,7 +63,7 @@ class BlackScholes:
             S * norm.cdf(
                 self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
             ) -
-            self.K * norm.cdf(
+            K * norm.cdf(
                 self.__f2(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
             ) * np.exp(-r * T)
         )

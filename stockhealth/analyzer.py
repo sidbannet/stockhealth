@@ -15,7 +15,6 @@ from enum import Enum, unique
 from collections import namedtuple
 import yfinance as yf
 from stockhealth.model import BlackScholes as Bs
-from stockhealth.utilities.models import Greeks as BsGreeks
 from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
 
 Transaction = namedtuple('forecast', ['simulation', 'amount'])
@@ -222,37 +221,109 @@ class TimeSeries:
             date.today() - timedelta(_NCD):
         ].sum() / self.history__['Close'].iloc[-1]
 
-    # noinspection PyUnresolvedReferences
+    # noinspection PyUnresolvedReferences,PyPep8Naming
     @staticmethod
     def __get_greeks(
             type_of_transaction: TransactionType,
-            time: np.array,
-            price: np.array,
-            strike: np.array,
+            times: np.array,
+            prices: np.array,
+            strikes: np.array,
+            sigmas: np.array,
             r: np.float,
             q: np.float = 0.0,
     ) -> dict:
         """Get greeks from the options chain."""
-        mdl = BsGreeks()
+        mdl = Bs()
+        greeks = {}
+        rs = np.full_like(prices, fill_value=r)
+        qs = np.full_like(prices, fill_value=q)
+        Ss = np.full_like(
+            prices,
+            fill_value=self.__ticker.history(
+                period='1m', interval='1m'
+            ).values[-1]
+        )
+        gamma_fns = np.vectorize(
+            lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._gamma(
+                S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
+            )
+        )
+        vega_fns = np.vectorize(
+            lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._vega(
+                S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
+            )
+        )
         if type_of_transaction.value == 'calls':
-            greeks = mdl.calls(
-                prices=price,
-                strikes=strike,
-                times_to_expiry=time,
-                interest_rate=r,
-                dividend_yield=q,
+            delta_fns = np.vectorize(
+                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._call_delta(
+                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
+                )
             )
+            theta_fns = np.vectorize(
+                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._call_theta(
+                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
+                )
+            )
+            rho_fns = np.vectorize(
+                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._call_rho(
+                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
+                )
+            )
+            sigma_fns = np.vectorize(
+                lambda Ss, Ks, Ts, rs, qs, prices: mdl._sigma_call(
+                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, price=prices,
+                )
+            )
+            deltas = delta_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            thetas = theta_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            rhos = rho_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            gammas = gamma_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            vegas = vega_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            _sigmas = sigma_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, prices=prices)
+            greeks = {
+                'delta': deltas,
+                'gamma': gammas,
+                'vega': vegas,
+                'theta': thetas,
+                'rho': rhos,
+                'sigma': _sigmas,
+            }
         elif type_of_transaction.value == 'puts':
-            greeks = mdl.puts(
-                prices=price,
-                strikes=strike,
-                times_to_expiry=time,
-                interest_rate=r,
-                dividend_yield=q,
+            delta_fns = np.vectorize(
+                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._put_delta(
+                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
+                )
             )
-        else:
-            greeks = {}
-        return greeks 
+            theta_fns = np.vectorize(
+                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._put_theta(
+                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
+                )
+            )
+            rho_fns = np.vectorize(
+                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._put_rho(
+                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
+                )
+            )
+            sigma_fns = np.vectorize(
+                lambda Ss, Ks, Ts, rs, qs, prices: mdl._sigma_put(
+                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, price=prices,
+                )
+            )
+            deltas = delta_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            thetas = theta_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            rhos = rho_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            gammas = gamma_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            vegas = vega_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
+            _sigmas = sigma_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, prices=prices)
+            greeks = {
+                'delta': deltas,
+                'gamma': gammas,
+                'vega': vegas,
+                'theta': thetas,
+                'rho': rhos,
+                'sigma': _sigmas,
+            }
+        return greeks
 
     def options_chain__(
             self,
@@ -272,9 +343,10 @@ class TimeSeries:
         chain['time to expiry in calendar year'] = dt.values
         if greek_on:
             greeks = self.__get_greeks(
-                time=dt.values,
-                price=chain['lastPrice'].values,
-                strike=chain['strike'].values,
+                times=dt.values,
+                prices=chain['lastPrice'].values,
+                strikes=chain['strike'].values,
+                sigmas=chain['impliedVolatility'].values,
                 r=interest_rate,
                 q=self.dividend_yield,
                 type_of_transaction=type_of_transaction,

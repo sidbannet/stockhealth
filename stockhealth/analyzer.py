@@ -229,6 +229,7 @@ class TimeSeries:
             prices: np.array,
             strikes: np.array,
             sigmas: np.array,
+            S: np.float,
             r: np.float,
             q: np.float = 0.0,
     ) -> dict:
@@ -237,12 +238,7 @@ class TimeSeries:
         greeks = {}
         rs = np.full_like(prices, fill_value=r)
         qs = np.full_like(prices, fill_value=q)
-        Ss = np.full_like(
-            prices,
-            fill_value=self.__ticker.history(
-                period='1m', interval='1m'
-            ).values[-1]
-        )
+        Ss = np.full_like(prices, fill_value=S)
         gamma_fns = np.vectorize(
             lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._gamma(
                 S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
@@ -347,6 +343,7 @@ class TimeSeries:
                 prices=chain['lastPrice'].values,
                 strikes=chain['strike'].values,
                 sigmas=chain['impliedVolatility'].values,
+                S=self.__ticker.history(period='1m', interval='1m').values[-1],
                 r=interest_rate,
                 q=self.dividend_yield,
                 type_of_transaction=type_of_transaction,

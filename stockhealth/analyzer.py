@@ -344,7 +344,9 @@ class TimeSeries:
                 prices=chain['lastPrice'].values,
                 strikes=chain['strike'].values,
                 sigmas=chain['impliedVolatility'].values,
-                S=self.__ticker.history(period='1m', interval='1m').values[-1],
+                S=self.__ticker.history(
+                    period='1d', interval='1m'
+                )['Close'].values[-1],
                 r=interest_rate,
                 q=self.dividend_yield,
                 type_of_transaction=type_of_transaction,

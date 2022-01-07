@@ -224,14 +224,14 @@ class TimeSeries:
     # noinspection PyUnresolvedReferences,PyPep8Naming
     @staticmethod
     def __get_greeks(
-            type_of_transaction: TransactionType,
-            times: np.array,
-            prices: np.array,
-            strikes: np.array,
-            sigmas: np.array,
-            S: np.float,
-            r: np.float,
-            q: np.float = 0.0,
+        type_of_transaction: TransactionType,
+        times: np.array,
+        prices: np.array,
+        strikes: np.array,
+        sigmas: np.array,
+        S: np.float,
+        r: np.float,
+        q: np.float = 0.0,
     ) -> dict:
         """Get greeks from the options chain."""
         mdl = Bs()
@@ -239,86 +239,87 @@ class TimeSeries:
         rs = np.full_like(prices, fill_value=r)
         qs = np.full_like(prices, fill_value=q)
         Ss = np.full_like(prices, fill_value=S)
-        gamma_fns = np.vectorize(
-            lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._gamma(
-                S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
-            )
-        )
-        vega_fns = np.vectorize(
-            lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._vega(
-                S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
-            )
-        )
+
+        # noinspection PyPep8Naming
+        def get_greeks__(
+                fns_delta,
+                fns_gamma,
+                fns_theta,
+                fns_rho,
+                fns_vega,
+                fns_sigma,
+                Ss__: np.array,
+                Ks__: np.array,
+                Ts__: np.array,
+                rs__: np.array,
+                qs__: np.array,
+                sigmas__: np.array,
+                prices__: np.array,
+        ) -> dict:
+            """Get the Greeks given the functions."""
+            deltas_ = np.vectorize(
+                lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_delta(
+                    S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
+                )
+            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            gammas_ = np.vectorize(
+                lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_gamma(
+                    S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
+                )
+            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            thetas_ = np.vectorize(
+                lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_theta(
+                    S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
+                )
+            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            rhos_ = np.vectorize(
+                lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_rho(
+                    S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
+                )
+            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            vegas_ = np.vectorize(
+                lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_vega(
+                    S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
+                )
+            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            volatility_ = np.vectorize(
+                lambda Ss_, Ks_, Ts_, rs_, qs_, prices_, : fns_sigma(
+                    S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, price=prices_,
+                )
+            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, prices_=prices__)
+            return {
+                'delta': deltas_,
+                'gamma': gammas_,
+                'theta': thetas_,
+                'rho': rhos_,
+                'vega': vegas_,
+                'sigma': volatility_,
+            }
+
         if type_of_transaction.value == 'calls':
-            delta_fns = np.vectorize(
-                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._call_delta(
-                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
-                )
+            greeks = get_greeks__(
+                fns_delta=mdl._call_delta,
+                fns_gamma=mdl._gamma,
+                fns_theta=mdl._call_theta,
+                fns_vega=mdl._vega,
+                fns_rho=mdl._call_rho,
+                fns_sigma=mdl._sigma_call,
+                Ss__=Ss, Ks__=strikes, Ts__=times,
+                rs__=rs, qs__=qs, sigmas__=sigmas,
+                prices__=prices,
             )
-            theta_fns = np.vectorize(
-                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._call_theta(
-                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
-                )
-            )
-            rho_fns = np.vectorize(
-                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._call_rho(
-                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
-                )
-            )
-            sigma_fns = np.vectorize(
-                lambda Ss, Ks, Ts, rs, qs, prices: mdl._sigma_call(
-                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, price=prices,
-                )
-            )
-            deltas = delta_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            thetas = theta_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            rhos = rho_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            gammas = gamma_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            vegas = vega_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            _sigmas = sigma_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, prices=prices)
-            greeks = {
-                'delta': deltas,
-                'gamma': gammas,
-                'vega': vegas,
-                'theta': thetas,
-                'rho': rhos,
-                'sigma': _sigmas,
-            }
         elif type_of_transaction.value == 'puts':
-            delta_fns = np.vectorize(
-                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._put_delta(
-                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
-                )
+            greeks = get_greeks__(
+                fns_delta=mdl._call_delta,
+                fns_gamma=mdl._gamma,
+                fns_theta=mdl._call_theta,
+                fns_vega=mdl._vega,
+                fns_rho=mdl._call_rho,
+                fns_sigma=mdl._sigma_call,
+                Ss__=Ss, Ks__=strikes, Ts__=times,
+                rs__=rs, qs__=qs, sigmas__=sigmas,
+                prices__=prices,
             )
-            theta_fns = np.vectorize(
-                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._put_theta(
-                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
-                )
-            )
-            rho_fns = np.vectorize(
-                lambda Ss, Ks, Ts, rs, qs, sigmas: mdl._put_rho(
-                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, sigma=sigmas,
-                )
-            )
-            sigma_fns = np.vectorize(
-                lambda Ss, Ks, Ts, rs, qs, prices: mdl._sigma_put(
-                    S=Ss, K=Ks, T=Ts, r=rs, q=qs, price=prices,
-                )
-            )
-            deltas = delta_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            thetas = theta_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            rhos = rho_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            gammas = gamma_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            vegas = vega_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, sigmas=sigmas)
-            _sigmas = sigma_fns(Ss=Ss, Ks=strikes, Ts=times, rs=rs, qs=qs, prices=prices)
-            greeks = {
-                'delta': deltas,
-                'gamma': gammas,
-                'vega': vegas,
-                'theta': thetas,
-                'rho': rhos,
-                'sigma': _sigmas,
-            }
         return greeks
 
     def options_chain__(

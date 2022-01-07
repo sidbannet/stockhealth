@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import datetime, timedelta
-from stockhealth.model import BlackScholes
+from stockhealth.model import BlackScholes, European
 from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
 from stockhealth.utilities.calendar import dt as date_difference
@@ -232,7 +232,7 @@ class Derivative:
     # noinspection PyPep8Naming,PyProtectedMember
     def __init__(
             self,
-            option: BlackScholes = None,
+            option: European = None,
             simulation_of_underlying: MonteCarlo = None,
             call_price: np.float = np.nan,
             put_price: np.float = np.nan,
@@ -261,13 +261,14 @@ class Derivative:
             'call': pd.DataFrame([]),
             'put': pd.DataFrame([]),
         }
+        option_mdl = BlackScholes()
         self.__call_price = np.vectorize(
-            lambda S, T, r, q, sigma: option._call_price(
+            lambda S, T, r, q, sigma: option_mdl._call_price(
                 S=S, T=T, r=r, q=q, sigma=sigma,
             )
         )
         self.__put_price = np.vectorize(
-            lambda S, T, r, q, sigma: option._put_price(
+            lambda S, T, r, q, sigma: option_mdl._put_price(
                 S=S, T=T, r=r, q=q, sigma=sigma,
             )
         )

@@ -300,6 +300,8 @@ class European(BlackScholes):
         self._call_values = np.vectorize(self._call_value)
         self._put_values = np.vectorize(self._put_value)
         self.values = np.vectorize(self._value)
+        self.sigma_call__ = self.__sigma_call
+        self.sigma_put__ = self.__sigma_put
 
     def _value(
         self,

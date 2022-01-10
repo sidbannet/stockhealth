@@ -327,6 +327,8 @@ class Derivative:
                 index=self.sim.S.index,
                 columns=self.sim.S.columns,
             )
+            call_price = self.price['call']
+            call_price[call_price < 0.0] = 0.0
         else:
             self.price['call'] = pd.DataFrame(
                 data=np.full_like(self.sim.S.values, fill_value=0.0),
@@ -346,6 +348,8 @@ class Derivative:
                 index=self.sim.S.index,
                 columns=self.sim.S.columns,
             )
+            put_price = self.price['put']
+            put_price[put_price < 0.0] = 0.0
         else:
             self.price['put'] = pd.DataFrame(
                 data=np.full_like(self.sim.S.values, fill_value=0.0),

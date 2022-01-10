@@ -7,6 +7,7 @@
 # Copyright 2021 [Siddhartha Banerjee](mailto:sidban@uwalumni.com)
 #
 
+from stockhealth.utilities.validator import Price
 from scipy.stats import norm
 import numpy as np
 _NUMBER_OF_TRADING_DAYS_PER_YEAR: float = 252.75
@@ -49,6 +50,7 @@ class BlackScholes:
             ) / (sigmas * np.sqrt(Ts)) - (sigmas * np.sqrt(Ts))
         )
 
+    @Price(operator=max, value=0)
     def _call_price(
         self,
         S: np.float = np.nan,
@@ -68,6 +70,7 @@ class BlackScholes:
             ) * np.exp(-r * T)
         )
 
+    @Price(operator=max, value=0)
     def _put_price(
         self,
         S: np.float = np.nan,

@@ -21,7 +21,7 @@ class Price:
     def __call__(self, func):
         """Calling the class."""
 
-        # noinspection PyPep8Naming
+        # noinspection PyPep8Naming,PyDecorator
         @classmethod
         def wrapper(
             cls,

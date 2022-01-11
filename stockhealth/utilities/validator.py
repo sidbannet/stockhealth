@@ -22,7 +22,9 @@ class Price:
         """Calling the class."""
 
         # noinspection PyPep8Naming
+        @classmethod
         def wrapper(
+            cls,
             S: np.float,
             K: np.float,
             T: np.float,
@@ -33,6 +35,6 @@ class Price:
             """Wrapper function that decorates the function."""
             return self.operator(
                 self.value,
-                func(S=S, K=K, T=T, r=r, q=q, sigma=sigma),
+                func(cls, S=S, K=K, T=T, r=r, q=q, sigma=sigma),
             )
         return wrapper

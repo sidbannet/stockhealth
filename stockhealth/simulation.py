@@ -12,13 +12,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from stockhealth.model import European
 from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
 from stockhealth.utilities.calendar import dt as date_difference
 from stockhealth.utilities.graph import plot as probplt
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
+from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
 
 
 # noinspection PyPep8Naming
@@ -288,7 +289,10 @@ class Derivative:
         )
         dt_from_reference = np.vectorize(
             lambda now: date_difference(
-                now=now, reference=self.sim.S.index[-1],
+                now=now,
+                reference=date.today() + timedelta(
+                    int(self.option.T * _NCD)
+                ),
             )
         )
         external_factors = pd.DataFrame(

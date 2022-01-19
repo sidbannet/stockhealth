@@ -110,7 +110,7 @@ class BlackScholes:
         sigma: np.float = np.nan,
     ) -> np.float:
         """Get call theta."""
-        return 0.01 * (
+        return (
             - np.exp(
                 -q * T
             ) * (
@@ -132,7 +132,7 @@ class BlackScholes:
         sigma: np.float = np.nan,
     ) -> np.float:
         """Get call rho."""
-        return 0.01 * (
+        return (
             K * T * np.exp(
                 -r * T
             ) * norm.cdf(self.__f2(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q))
@@ -162,7 +162,7 @@ class BlackScholes:
         sigma: np.float = np.nan,
     ) -> np.float:
         """Get put theta."""
-        return 0.01 * (
+        return (
             - np.exp(
                 -q * T
             ) * (
@@ -186,7 +186,7 @@ class BlackScholes:
         sigma: np.float = np.nan,
     ) -> np.float:
         """Get put rho."""
-        return 0.01 * (
+        return (
             -K * T * np.exp(
                 -r * T
             ) * norm.cdf(-self.__f2(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q))
@@ -216,7 +216,7 @@ class BlackScholes:
         sigma: np.float = np.nan,
     ) -> np.float:
         """Get vega."""
-        return 0.01 * (
+        return (
             S * norm.pdf(self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)) * np.sqrt(T)
         ) * np.exp(-q * T)
 

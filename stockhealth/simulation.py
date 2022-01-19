@@ -12,10 +12,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from stockhealth.model import European
 from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
+from stockhealth.utilities.calendar import dt as date_difference
+from stockhealth.utilities.graph import plot as probplt
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
+from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
 
 
 # noinspection PyPep8Naming
@@ -85,46 +89,15 @@ class MonteCarlo:
         """Name the dataframe index column."""
         self.S.index.name = self.V.index.name = name
 
-    def plot(self) -> tuple:
+    def plot(self, plot_volatility: bool = False) -> tuple:
         """Plot timeseries statistics."""
         assert self.__solved, "This simulation is not solved yet."
-        v = self.S.values.copy()
-        v.sort(axis=1)
-        df_prob_ = pd.DataFrame(data=v, index=self.S.index).T
-        df_prob_['p'] = df_prob_.index / df_prob_.index.max()
-        df_prob_ = df_prob_.set_index('p')
-        df_prob__ = pd.DataFrame(
-            columns=df_prob_.columns,
-            index=[0.00135, 0.02275, 0.15865, 0.5, 0.84135, 0.97725, 0.99865],
-        )
-        df_prob = pd.concat(
-            [df_prob_, df_prob__],
-        ).sort_index().interpolate(axis=0).T
-        fig = plt.figure('Timeseries of statistics')
-        axs = fig.subplots(nrows=1, ncols=1, sharex=True,)
-        axs.fill_between(
-            x=df_prob.index, y1=df_prob[0.00135], y2=df_prob[0.99865],
-            where=df_prob[0.99865] > df_prob[0.00135],
-            facecolor='blue', alpha=0.2, interpolate=True,
-        )
-        axs.fill_between(
-            x=df_prob.index, y1=df_prob[0.02275], y2=df_prob[0.97725],
-            where=df_prob[0.97725] > df_prob[0.02275],
-            facecolor='blue', alpha=0.4, interpolate=True,
-        )
-        axs.fill_between(
-            x=df_prob.index, y1=df_prob[0.15865], y2=df_prob[0.84135],
-            where=df_prob[0.84135] > df_prob[0.15865],
-            facecolor='blue', alpha=0.6, interpolate=True,
-        )
-        df_prob[0.5].plot(ax=axs, label='median', style='-.', color='k',)
-        axs.grid(True)
-        axs.legend(['median', '99.74 %', '95.45 %', '68.27 %'])
-        axs.set_title('Confidence Interval')
-        axs.set_ylabel('Price')
-        axs.set_xlabel('Time')
-        fig.suptitle('Timeseries of future spot price possibility statistics')
-        fig.autofmt_xdate(rotation=45)
+        if not plot_volatility:
+            fig, axs = probplt(self.S)
+            axs.set_ylabel('Price')
+        else:
+            fig, axs = probplt(self.V)
+            axs.set_ylabel('Volatility')
         return fig, axs
 
     def _stat(self, bins: int = int(1000)) -> None:
@@ -149,6 +122,12 @@ class MonteCarlo:
         }
         self.__cdf_calculated = True
 
+    @property
+    def get_forecast__(self) -> pd.DataFrame:
+        """Get the timeseries data of stock forecast."""
+        assert self.__solved, "The simulation is not solved yet."
+        return self.S
+
 
 class MonteCarloWithTraining(MonteCarlo):
     """Sub-class of MonteCarlo which trains a model before simulations."""
@@ -163,8 +142,11 @@ class MonteCarloWithTraining(MonteCarlo):
             start_date: datetime = datetime.today().date(),
     ):
         """Instantiate the class."""
-        mew = trained_model.history['mew']
-        price = trained_model.history['latest close']
+        stock_history = trained_model.stock.history__.loc[
+            :np.datetime64(start_date)
+        ]
+        mew = trained_model.history['roi']
+        price = stock_history['Close'].values[-1]
         sigma = trained_model.history['std']
         beta = np.float(0)
         kappa = np.float(0)
@@ -199,13 +181,16 @@ class MonteCarlosWithHeston(MonteCarlo):
             start_date: datetime = datetime.today().date(),
     ):
         """Instantiate the class."""
-        historical_roi = trained_model.history['mew']
+        historical_roi = trained_model.history['roi']
         historical_volatility = trained_model.history['std']
-        price = trained_model.history['latest close']
-        volatility = trained_model.stock.history__['Volatility'].rolling(
+        stock_history = trained_model.stock.history__.loc[
+            :np.datetime64(start_date)
+        ]
+        price = stock_history['Close'].values[-1]
+        volatility = stock_history['Volatility'].rolling(
             window=number_of_days,
         ).mean()[-1] * np.sqrt(_NTD)
-        roi = trained_model.stock.history__['Risk free return'].rolling(
+        roi = stock_history['Risk free return'].rolling(
             window=number_of_days,
         ).mean()[-1] * _NTD
         # noinspection PyProtectedMember
@@ -237,3 +222,165 @@ class MonteCarlosWithHeston(MonteCarlo):
             stock_exchange_name=stock_exchange_name,
             start_date=start_date,
         )
+
+
+class Derivative:
+    """
+    Options or derivative future predictions given an underlying
+    stochastic simulation is done.
+    """
+
+    # noinspection PyPep8Naming,PyProtectedMember
+    def __init__(
+            self,
+            option: European = None,
+            simulation_of_underlying: MonteCarlo = None,
+            call_price: np.float = np.nan,
+            put_price: np.float = np.nan,
+    ):
+        """Instantiate the class."""
+        self.option = option
+        self.sim = simulation_of_underlying
+        if call_price is np.nan:
+            self._solve_for_call = False
+        else:
+            self._solve_for_call = True
+        if put_price is np.nan:
+            self._solve_for_put = False
+        else:
+            self._solve_for_put = True
+        self.greeks = option.greeks(call_price=call_price, put_price=put_price)
+        self.__underlying = {
+            'S': pd.DataFrame([]),
+            'V': pd.DataFrame([]),
+        }
+        self.__initial_call = call_price
+        self.__initial_put = put_price
+        self.__initial_call_iv = option.sigma_call__(price=call_price)
+        self.__initial_put_iv = option.sigma_put__(price=put_price)
+        self.price = {
+            'call': pd.DataFrame([]),
+            'put': pd.DataFrame([]),
+        }
+        self.__call_price = np.vectorize(
+            lambda S, K, T, r, q, sigma: option._call_price(
+                S=S, K=K, T=T, r=r, q=q, sigma=sigma,
+            )
+        )
+        self.__put_price = np.vectorize(
+            lambda S, K, T, r, q, sigma: option._put_price(
+                S=S, K=K, T=T, r=r, q=q, sigma=sigma,
+            )
+        )
+        self._options_forecast = pd.DataFrame([])
+        self._solved = False
+
+    def solve(self) -> None:
+        """Solve for options future price forecast."""
+        self.__underlying['S'] = pd.DataFrame(
+            data=self.sim.S.values,
+            index=self.sim.S.index,
+            columns=self.sim.S.columns,
+        )
+        self.__underlying['V'] = pd.DataFrame(
+            data=self.sim.V.values,
+            index=self.sim.V.index,
+            columns=self.sim.V.columns,
+        )
+        dt_from_reference = np.vectorize(
+            lambda now: date_difference(
+                now=now,
+                reference=date.today() + timedelta(
+                    int(self.option.T * _NCD)
+                ),
+            )
+        )
+        external_factors = pd.DataFrame(
+            data=-dt_from_reference(self.sim.S.index),
+            index=self.sim.S.index,
+            columns=['time from expiry'],
+        )
+        external_factors['interest rate'] = self.option.r
+        call_iv_multiplier = self.__initial_call_iv / self.sim.V.values[0][0]
+        put_iv_multiplier = self.__initial_put_iv / self.sim.V.values[0][0]
+        number_of_instances = self.sim.S.shape[1]
+        time = np.transpose(
+            np.tile(
+                external_factors['time from expiry'].values,
+                (number_of_instances, 1),
+            )
+        )
+        interest_rate = np.transpose(
+            np.tile(
+                external_factors['interest rate'].values,
+                (number_of_instances, 1),
+            )
+        )
+        dividend_rate = np.full_like(interest_rate, fill_value=self.option.q)
+        strike = np.full_like(interest_rate, fill_value=self.option.K)
+        if self._solve_for_call:
+            self.price['call'] = pd.DataFrame(
+                data=self.__call_price(
+                    S=self.sim.S.values,
+                    K=strike,
+                    sigma=self.sim.V.values * call_iv_multiplier,
+                    T=time,
+                    r=interest_rate,
+                    q=dividend_rate,
+                ),
+                index=self.sim.S.index,
+                columns=self.sim.S.columns,
+            )
+            call_price = self.price['call']
+            call_price[call_price < 0.0] = 0.0
+        else:
+            self.price['call'] = pd.DataFrame(
+                data=np.full_like(self.sim.S.values, fill_value=0.0),
+                index=self.sim.S.index,
+                columns=self.sim.S.columns,
+            )
+        if self._solve_for_put:
+            self.price['put'] = pd.DataFrame(
+                data=self.__put_price(
+                    S=self.sim.S.values,
+                    K=strike,
+                    sigma=self.sim.V.values * put_iv_multiplier,
+                    T=time,
+                    r=interest_rate,
+                    q=dividend_rate,
+                ),
+                index=self.sim.S.index,
+                columns=self.sim.S.columns,
+            )
+            put_price = self.price['put']
+            put_price[put_price < 0.0] = 0.0
+        else:
+            self.price['put'] = pd.DataFrame(
+                data=np.full_like(self.sim.S.values, fill_value=0.0),
+                index=self.sim.S.index,
+                columns=self.sim.S.columns,
+            )
+        self._options_forecast = self.price['call'] + self.price['put']
+        self._solved = True
+
+    def plot(self) -> tuple:
+        """Timeseries plot with uncertainty bands."""
+        assert self._solved, "The Derivative futures is not simulated yet."
+        fig = plt.figure('Timeseries of options price statistics')
+        axs = fig.subplots(nrows=2, ncols=1, sharex=True)
+        fig, axs[0] = probplt(self.price['call'], fig=fig, axs=axs[0])
+        fig, axs[1] = probplt(self.price['put'], fig=fig, axs=axs[1])
+        axs[0].set_title('Call')
+        axs[1].set_title('Put')
+        _ = [ax.set_ylabel('Price') for ax in axs.flat]
+        fig.suptitle('Timeseries of future derivative price possibility statistics')
+        return fig, axs
+
+    @property
+    def get_forecast__(
+            self,
+            number_of_shares_per_contract: int = int(100),
+    ) -> pd.DataFrame:
+        """Get timeseries forecast of the options value."""
+        assert self._solved, "This simulation is not solved yet."
+        return self._options_forecast * number_of_shares_per_contract

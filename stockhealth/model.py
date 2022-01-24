@@ -525,7 +525,7 @@ class VolatilitySmile:
         tol: float = 1e-05
     ) -> None:
         """Instantiate the model object and get hubber regressor."""
-        huber_above_current = HuberRegressor(
+        self.__huber_above_current = HuberRegressor(
             epsilon=epsilon,
             max_iter=max_iter,
             alpha=alpha,
@@ -533,10 +533,10 @@ class VolatilitySmile:
             fit_intercept=fit_intercept,
             tol=tol,
         ).fit(
-            X = chain_data.index[current_stock_price:] - current_stock_price,
-            y = chain_data[volatility_measure][current_stock_price:],
+            X=chain_data.index[current_stock_price:] - current_stock_price,
+            y=chain_data[volatility_measure][current_stock_price:],
         )
-        huber_below_current = HuberRegressor(
+        self.__huber_below_current = HuberRegressor(
             epsilon=epsilon,
             max_iter=max_iter,
             alpha=alpha,
@@ -544,6 +544,6 @@ class VolatilitySmile:
             fit_intercept=fit_intercept,
             tol=tol,
         ).fit(
-            X = chain_data.index[:current_stock_price] - current_stock_price,
-            y = chain_data[volatility_measure][:current_stock_price],
+            X=chain_data.index[:current_stock_price] - current_stock_price,
+            y=chain_data[volatility_measure][:current_stock_price],
         )

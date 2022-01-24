@@ -8,7 +8,9 @@
 #
 
 from scipy.stats import norm
+from sklearn.linear_model import HuberRegressor
 import numpy as np
+import pandas as pd
 _NUMBER_OF_TRADING_DAYS_PER_YEAR: float = 252.75
 _NUMBER_OF_CALENDAR_DAYS_PER_YEAR: float = 365.2425
 
@@ -504,4 +506,44 @@ class SimpleStochastic(StochasticVolatility):
             beta=0,
             epsilon=0,
             number_of_instances=number_of_instances,
+        )
+
+
+class VolatilitySmile:
+    """Train a volatility smile model and obtain Huber regressor."""
+
+    def __init__(
+        self,
+        chain_data: pd.DataFrame,
+        current_stock_price: float,
+        volatility_measure: str = 'sigma',
+        epsilon: float = 1.35,
+        max_iter: int = 100,
+        alpha: float = 0.0001,
+        warm_start: bool = False,
+        fit_intercept: bool = False,
+        tol: float = 1e-05
+    ) -> None:
+        """Instantiate the model object and get hubber regressor."""
+        huber_above_current = HuberRegressor(
+            epsilon=epsilon,
+            max_iter=max_iter,
+            alpha=alpha,
+            warm_start=warm_start,
+            fit_intercept=fit_intercept,
+            tol=tol,
+        ).fit(
+            X = chain_data.index[current_stock_price:] - current_stock_price,
+            y = chain_data[volatility_measure][current_stock_price:],
+        )
+        huber_below_current = HuberRegressor(
+            epsilon=epsilon,
+            max_iter=max_iter,
+            alpha=alpha,
+            warm_start=warm_start,
+            fit_intercept=fit_intercept,
+            tol=tol,
+        ).fit(
+            X = chain_data.index[:current_stock_price] - current_stock_price,
+            y = chain_data[volatility_measure][:current_stock_price],
         )

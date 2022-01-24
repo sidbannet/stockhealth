@@ -292,7 +292,7 @@ class TimeSeries:
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_fair_market_price(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )
+            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
             return {
                 'delta': deltas_,
                 'gamma': gammas_,

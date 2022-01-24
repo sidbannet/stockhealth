@@ -248,6 +248,7 @@ class TimeSeries:
                 fns_rho,
                 fns_vega,
                 fns_sigma,
+                fns_fair_market_price,
                 Ss__: np.array,
                 Ks__: np.array,
                 Ts__: np.array,
@@ -287,6 +288,11 @@ class TimeSeries:
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, price=prices_,
                 )
             )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, prices_=prices__)
+            fair_market_prices_ = np.vectorize(
+                lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_fair_market_price(
+                    S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
+                )
+            )
             return {
                 'delta': deltas_,
                 'gamma': gammas_,
@@ -294,6 +300,7 @@ class TimeSeries:
                 'rho': rhos_,
                 'vega': vegas_,
                 'sigma': volatility_,
+                'fair market price': fair_market_prices_,
             }
 
         if type_of_transaction.value == 'calls':
@@ -304,6 +311,7 @@ class TimeSeries:
                 fns_vega=mdl._vega,
                 fns_rho=mdl._call_rho,
                 fns_sigma=mdl._sigma_call,
+                fns_fair_market_price=mdl._call_price,
                 Ss__=Ss, Ks__=strikes, Ts__=times,
                 rs__=rs, qs__=qs, sigmas__=sigmas,
                 prices__=prices,
@@ -316,6 +324,7 @@ class TimeSeries:
                 fns_vega=mdl._vega,
                 fns_rho=mdl._call_rho,
                 fns_sigma=mdl._sigma_call,
+                fns_fair_market_price=mdl._put_price,
                 Ss__=Ss, Ks__=strikes, Ts__=times,
                 rs__=rs, qs__=qs, sigmas__=sigmas,
                 prices__=prices,

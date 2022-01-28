@@ -219,6 +219,13 @@ class TimeSeries:
         return self.__history
 
     @property
+    def current__(self) -> float:
+        """Get the latest stock price."""
+        return self.__ticker.history(
+            period='1d', interval='1m',
+        )['Close'].values[-1]
+
+    @property
     def dividend_yield(self) -> np.float:
         """Get dividend yield."""
         return self.__ticker.dividends.loc[

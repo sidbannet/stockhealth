@@ -73,10 +73,7 @@ class TimeSeries:
         df['Risk free return'].values[0] = float(0.0)
         df['Volatility'] = (
             df__['Real High'] - df__['Real Low']
-        ) / df['Close'].shift(periods=1)
-        df['Volatility'].values[0] = (
-            df['High'].values[0] - df['Low'].values[0]
-        ) / df['Open'].values[0]
+        ) / df__['last price']
 
     def technical(
             self,

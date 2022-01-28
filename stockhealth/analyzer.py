@@ -300,7 +300,7 @@ class TimeSeries:
                 'rho': rhos_,
                 'vega': vegas_,
                 'sigma': volatility_,
-                'fair market price': fair_market_prices_,
+                'theo price': fair_market_prices_,
             }
 
         if type_of_transaction.value == 'calls':

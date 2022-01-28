@@ -516,13 +516,13 @@ class VolatilitySmile:
         self,
         chain_data: pd.DataFrame,
         current_stock_price: float,
-        volatility_measure: str = 'sigma',
+        volatility_measure: str = 'impliedVolatility',
         epsilon: float = 1.35,
         max_iter: int = 100,
         alpha: float = 0.0001,
         warm_start: bool = False,
         fit_intercept: bool = False,
-        tol: float = 1e-05
+        tol: float = 1e-5
     ) -> None:
         """Instantiate the model object and get hubber regressor."""
         self.__huber_above_current = HuberRegressor(

@@ -65,7 +65,7 @@ class TimeSeries:
         df__['Price'] = df['Real Worth']
         df__['High'] = df['High']
         df__['Low'] = df['Low']
-        df__['last price'] = df['Real Worth'].shift(periods=1)
+        df__['last price'] = df['Close'].shift(periods=1)
         df__['last price'].values[0] = df['Close'].values[0]
         df__['Real High'] = df__[['last price', 'High']].max(axis=1)
         df__['Real Low'] = df__[['last price', 'Low']].min(axis=1)

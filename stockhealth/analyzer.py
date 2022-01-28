@@ -61,11 +61,19 @@ class TimeSeries:
         df['Real Worth'] = df['Close'][0] + \
             (df['Close'].diff(periods=1) + df['Dividends']).cumsum()
         df['Real Worth'].values[0] = df['Close'].values[0]
+        df__ = pd.DataFrame([])
+        df__['Price'] = df['Real Worth']
+        df__['High'] = df['High']
+        df__['Low'] = df['Low']
+        df__['last price'] = df['Real Worth'].shift(periods=1)
+        df__['last price'].values[0] = df['Close'].values[0]
+        df__['Real High'] = df__[['last price', 'High']].max(axis=1)
+        df__['Real Low'] = df__[['last price', 'Low']].min(axis=1)
         df['Risk free return'] = df['Real Worth'].diff(periods=1) / \
             df['Real Worth'].shift(periods=1)
         df['Risk free return'].values[0] = float(0.0)
         df['Volatility'] = (
-            df['High'] - df['Low']
+            df__['Real High'] - df__['Real Low']
         ) / df['Real Worth'].shift(periods=1)
         df['Volatility'].values[0] = (
             df['High'].values[0] - df['Low'].values[0]

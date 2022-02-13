@@ -78,14 +78,16 @@ class Trends:
                 df['Risk free return'] - df['Risk free return'].mean()
             ) * _NTD
         ).rolling(window=number_of_days).mean()
-        z1 = (df['Risk free return'] * _NTD).rolling(window=number_of_days).mean()
+        z1 = (df['Risk free return'] * _NTD).rolling(
+            window=number_of_days).mean()
         kde1 = self.__extract_kde(x=x1, y=y1, n=number_of_days,)
         reg1 = self.__extract_regressor(x=x1, y=y1, n=number_of_days)
         std1 = np.nanstd(z1)
         # Get the features of stochastic volatility.
         y2 = (
             (df['Risk free return']) * _NTD
-        ).shift(periods=-number_of_days).rolling(window=number_of_days).std() / (
+        ).shift(periods=-number_of_days).rolling(
+            window=number_of_days).std() / (
             (df['Risk free return']) * _NTD
         ).rolling(window=number_of_days).std()
         x2 = (
@@ -93,7 +95,8 @@ class Trends:
         ).rolling(window=number_of_days).std() / (
             (df['Risk free return'] * _NTD).std()
         )
-        z2 = (df['Risk free return'] * _NTD).rolling(window=number_of_days).std()
+        z2 = (df['Risk free return'] * _NTD).rolling(
+            window=number_of_days).std()
         kde2 = self.__extract_kde(
             x=vectorized_log(x2),
             y=vectorized_log(y2),

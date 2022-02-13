@@ -116,7 +116,9 @@ class BlackScholes:
             - np.exp(
                 -q * T
             ) * (
-                S * norm.pdf(self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)) * sigma
+                S * norm.pdf(
+                    self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
+                ) * sigma
             ) / (2 * np.sqrt(T)) -
             r * K * np.exp(-r * T) *
             norm.cdf(self.__f2(sigmas=sigma, Ss=S, Ts=T, Ks=K, rs=r, qs=q))
@@ -168,14 +170,18 @@ class BlackScholes:
             - np.exp(
                 -q * T
             ) * (
-                S * norm.pdf(self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)) * sigma
+                S * norm.pdf(
+                    self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
+                ) * sigma
             ) / (2 * np.sqrt(T)) +
             r * K * np.exp(-r * T) * norm.cdf(
                 -self.__f2(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
             ) -
             q * S * np.exp(
                 -q * T
-            ) * norm.cdf(-self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q))
+            ) * norm.cdf(
+                -self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
+            )
         )
 
     def _put_rho(
@@ -191,7 +197,9 @@ class BlackScholes:
         return (
             -K * T * np.exp(
                 -r * T
-            ) * norm.cdf(-self.__f2(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q))
+            ) * norm.cdf(
+                -self.__f2(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
+            )
         )
 
     def _gamma(
@@ -219,7 +227,9 @@ class BlackScholes:
     ) -> np.float:
         """Get vega."""
         return (
-            S * norm.pdf(self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)) * np.sqrt(T)
+            S * norm.pdf(
+                self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
+            ) * np.sqrt(T)
         ) * np.exp(-q * T)
 
     def _sigma_call(
@@ -236,7 +246,9 @@ class BlackScholes:
         return sigma_[
             (
                 np.abs(
-                    self._call_price(sigma=sigma_, S=S, K=K, T=T, r=r, q=q) - price
+                    self._call_price(
+                        sigma=sigma_, S=S, K=K, T=T, r=r, q=q
+                    ) - price
                 )
             ).argmin()
         ]
@@ -255,7 +267,9 @@ class BlackScholes:
         return sigma_[
             (
                 np.abs(
-                    self._put_price(sigma=sigma_, S=S, K=K, T=T, r=r, q=q) - price
+                    self._put_price(
+                        sigma=sigma_, S=S, K=K, T=T, r=r, q=q
+                    ) - price
                 )
             ).argmin()
         ]
@@ -263,7 +277,7 @@ class BlackScholes:
 
 # noinspection PyPep8Naming,PyUnresolvedReferences
 class European(BlackScholes):
-    """Model to determine fair European options price based on Black Scholes."""
+    """Fair European options price based on Black Scholes."""
 
     def __init__(
         self,
@@ -285,20 +299,34 @@ class European(BlackScholes):
         self.T = T
         self.r = r
         self.q = q
-        self.__d1 = lambda sigma: self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
-        self.__d2 = lambda sigma: self.__f2(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
-        self._call_value = lambda sigma: self._call_price(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self._put_value = lambda sigma: self._put_price(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self.__call_delta = lambda sigma: self._call_delta(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self.__put_delta = lambda sigma: self._put_delta(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self.__call_theta = lambda sigma: self._call_theta(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self.__put_theta = lambda sigma: self._put_theta(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self.__call_rho = lambda sigma: self._call_rho(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self.__put_rho = lambda sigma: self._put_rho(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self.__gamma = lambda sigma: self._gamma(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self.__vega = lambda sigma: self._vega(sigma=sigma, S=S, K=K, T=T, r=r, q=q)
-        self.__sigma_call = lambda price: self._sigma_call(S=S, K=K, T=T, r=r, q=q, price=price)
-        self.__sigma_put = lambda price: self._sigma_put(S=S, K=K, T=T, r=r, q=q, price=price)
+        self.__d1 = lambda sigma: self.__f1(
+            sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
+        self.__d2 = lambda sigma: self.__f2(
+            sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
+        self._call_value = lambda sigma: self._call_price(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self._put_value = lambda sigma: self._put_price(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__call_delta = lambda sigma: self._call_delta(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__put_delta = lambda sigma: self._put_delta(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__call_theta = lambda sigma: self._call_theta(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__put_theta = lambda sigma: self._put_theta(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__call_rho = lambda sigma: self._call_rho(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__put_rho = lambda sigma: self._put_rho(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__gamma = lambda sigma: self._gamma(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__vega = lambda sigma: self._vega(
+            sigma=sigma, S=S, K=K, T=T, r=r, q=q)
+        self.__sigma_call = lambda price: self._sigma_call(
+            S=S, K=K, T=T, r=r, q=q, price=price)
+        self.__sigma_put = lambda price: self._sigma_put(
+            S=S, K=K, T=T, r=r, q=q, price=price)
         self._call_values = np.vectorize(self._call_value)
         self._put_values = np.vectorize(self._put_value)
         self.values = np.vectorize(self._value)
@@ -354,7 +382,8 @@ class European(BlackScholes):
     ) -> dict:
         """Get sigmas and calculate greeks for given options price."""
         return {
-            'call': self._value(sigma=self.__sigma_call(price=call_price))['call'],
+            'call': self._value(
+                sigma=self.__sigma_call(price=call_price))['call'],
             'put': self._value(sigma=self.__sigma_put(price=put_price))['put'],
         }
 
@@ -480,7 +509,8 @@ class Heston:
         """Reset model states to t=0."""
         self.S = np.full_like(self.S, fill_value=self.__S)
         self.mew = np.full_like(self.mew, fill_value=self.__mew)
-        self.volatility = np.full_like(self.volatility, fill_value=self.__volatility)
+        self.volatility = np.full_like(
+            self.volatility, fill_value=self.__volatility)
         self.Y = self.__get_Y(self.volatility)
 
 

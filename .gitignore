@@ -118,3 +118,4 @@ dmypy.json
 .idea/stockhealth.iml
 .idea/vcs.xml
 .vscode/settings.json
+.vscode/launch.json

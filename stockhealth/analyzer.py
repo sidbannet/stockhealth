@@ -273,37 +273,87 @@ class TimeSeries:
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_delta(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             gammas_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_gamma(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             thetas_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_theta(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             rhos_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_rho(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             vegas_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_vega(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             volatility_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, prices_, : fns_sigma(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, price=prices_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, prices_=prices__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                prices_=prices__,
+            )
             fair_market_prices_ = np.vectorize(
-                lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_fair_market_price(
+                lambda Ss_, Ks_, Ts_,
+                rs_, qs_, sigmas_, : fns_fair_market_price(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             return {
                 'delta': deltas_,
                 'gamma': gammas_,
@@ -353,10 +403,15 @@ class TimeSeries:
         chain = self.__ticker.option_chain(
             date=expiry_date.strftime('%Y-%m-%d')
         ).__getattribute__(type_of_transaction.value)
+        number_of_seconds_in_calendar = _NCD * 60 * 60 * 24
         dt = (
-            pd.to_datetime(expiry_date.strftime('%Y-%m-%d') + 'T23:59:59.00') -
-            pd.to_datetime(chain['lastTradeDate'])
-        ).astype('timedelta64[D]') / _NCD
+            pd.to_datetime(
+                expiry_date.strftime('%Y-%m-%d') + 'T23:59:59.00'
+            ).tz_localize(tz=None).to_datetime64() -
+            pd.to_datetime(chain['lastTradeDate'].values)
+        ).astype('timedelta64[s]').astype('float') / np.timedelta64(
+            number_of_seconds_in_calendar.__int__(), 's'
+        ).astype('float')
         chain['time to expiry in calendar year'] = dt.values
         if greek_on:
             greeks = self.__get_greeks(

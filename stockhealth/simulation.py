@@ -14,7 +14,8 @@ from scipy.stats import gaussian_kde
 from pandas_market_calendars import get_calendar as market_calendar
 from datetime import date, datetime, timedelta
 from stockhealth.model import European
-from stockhealth.model import StochasticVolatility as Model, Heston as HestonProcess
+from stockhealth.model \
+    import StochasticVolatility as Model, Heston as HestonProcess
 from stockhealth.training import Trends
 from stockhealth.utilities.calendar import dt as date_difference
 from stockhealth.utilities.graph import plot as probplt
@@ -373,7 +374,8 @@ class Derivative:
         axs[0].set_title('Call')
         axs[1].set_title('Put')
         _ = [ax.set_ylabel('Price') for ax in axs.flat]
-        fig.suptitle('Timeseries of future derivative price possibility statistics')
+        fig.suptitle(
+            'Timeseries of future derivative price possibility statistics')
         return fig, axs
 
     @property

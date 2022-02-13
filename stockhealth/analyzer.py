@@ -10,7 +10,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+import pytz
 from enum import Enum, unique
 from collections import namedtuple
 import yfinance as yf
@@ -228,8 +229,14 @@ class TimeSeries:
     @property
     def dividend_yield(self) -> np.float:
         """Get dividend yield."""
+        date_a_year_ago = pytz.utc.localize(
+            datetime.combine(
+                date.today() - timedelta(_NCD),
+                datetime.min.time()
+            )
+        )
         return self.__ticker.dividends.loc[
-            date.today() - timedelta(_NCD):
+            date_a_year_ago:
         ].sum() / self.history__['Close'].iloc[-1]
 
     # noinspection PyUnresolvedReferences,PyPep8Naming

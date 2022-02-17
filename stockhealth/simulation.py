@@ -276,13 +276,33 @@ class Derivative:
             )
         )
         if vsmile is None:
+            self.__vsmile = False
             self.__vsmile_slope = np.array([0.0, 0.0])
-            self.__current_stock_price = self.sim.S.values[0][0]
         else:
+            self.__vsmile = True
             self.__vsmile_slope = vsmile.slopes
-            self.__current_stock_price = vsmile.current_stock
         self._options_forecast = pd.DataFrame([])
         self._solved = False
+
+    @property
+    def __iv_offset(
+        self,
+    ) -> np.array:
+        """Get the volatility offset from volatility smile."""
+        iv_offset = 0 * self.sim.V
+        if not self.__vsmile:
+            return iv_offset.values
+        else:
+            legs = [
+                self.sim.S < self.option.K,
+                self.sim.S >= self.option.K,
+            ]
+            for idx, leg in enumerate(legs):
+                iv_offset[leg] =\
+                    self.__vsmile_slope[idx] * (
+                        self.sim.S[leg] - self.option.K
+                    )
+            return iv_offset.values
 
     def solve(self) -> None:
         """Solve for options future price forecast."""
@@ -312,16 +332,6 @@ class Derivative:
         external_factors['interest rate'] = self.option.r
         call_iv_multiplier = self.__initial_call_iv / self.sim.V.values[0][0]
         put_iv_multiplier = self.__initial_put_iv / self.sim.V.values[0][0]
-        call_iv_offset = 0 * self.sim.V
-        put_iv_offset = 0 * self.sim.V
-        lower_leg = self.sim.S <= self.__current_stock_price
-        upper_leg = self.sim.S > self.__current_stock_price
-        for offset in [call_iv_offset, put_iv_offset]:
-            for idx, leg in enumerate([lower_leg, upper_leg]):
-                offset[leg] =\
-                    self.__vsmile_slope[idx] * (
-                        self.sim.S[leg] - self.__current_stock_price
-                    )
         number_of_instances = self.sim.S.shape[1]
         time = np.transpose(
             np.tile(
@@ -344,7 +354,7 @@ class Derivative:
                     K=strike,
                     sigma=(
                         self.sim.V.values * call_iv_multiplier
-                        + call_iv_offset.values
+                        + self.__iv_offset
                     ),
                     T=time,
                     r=interest_rate,
@@ -368,7 +378,7 @@ class Derivative:
                     K=strike,
                     sigma=(
                         self.sim.V.values * put_iv_multiplier
-                        + put_iv_offset.values
+                        + self.__iv_offset
                     ),
                     T=time,
                     r=interest_rate,

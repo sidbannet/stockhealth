@@ -19,6 +19,7 @@ from stockhealth.model \
 from stockhealth.training import Trends
 from stockhealth.utilities.calendar import dt as date_difference
 from stockhealth.utilities.graph import plot as probplt
+from stockhealth.model import VolatilitySmile as Vsmile
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
 
@@ -238,6 +239,7 @@ class Derivative:
             simulation_of_underlying: MonteCarlo = None,
             call_price: np.float = np.nan,
             put_price: np.float = np.nan,
+            vsmile: Vsmile = None,
     ):
         """Instantiate the class."""
         self.option = option
@@ -273,6 +275,12 @@ class Derivative:
                 S=S, K=K, T=T, r=r, q=q, sigma=sigma,
             )
         )
+        if vsmile is None:
+            self.__vsmile_slope = np.array([0.0, 0.0])
+            self.__current_stock_price = self.sim.S.values[0][0]
+        else:
+            self.__vsmile_slope = vsmile.slopes
+            self.__current_stock_price = vsmile.current_stock
         self._options_forecast = pd.DataFrame([])
         self._solved = False
 
@@ -304,6 +312,16 @@ class Derivative:
         external_factors['interest rate'] = self.option.r
         call_iv_multiplier = self.__initial_call_iv / self.sim.V.values[0][0]
         put_iv_multiplier = self.__initial_put_iv / self.sim.V.values[0][0]
+        call_iv_offset = 0 * self.sim.V
+        put_iv_offset = 0 * self.sim.V
+        lower_leg = self.sim.S <= self.__current_stock_price
+        upper_leg = self.sim.S > self.__current_stock_price
+        for offset in [call_iv_offset, put_iv_offset]:
+            for idx, leg in enumerate([lower_leg, upper_leg]):
+                offset[leg] =\
+                    self.__vsmile_slope[idx] * (
+                        self.sim.S[leg] - self.__current_stock_price
+                    )
         number_of_instances = self.sim.S.shape[1]
         time = np.transpose(
             np.tile(
@@ -324,7 +342,10 @@ class Derivative:
                 data=self.__call_price(
                     S=self.sim.S.values,
                     K=strike,
-                    sigma=self.sim.V.values * call_iv_multiplier,
+                    sigma=(
+                        self.sim.V.values * call_iv_multiplier
+                        + call_iv_offset.values
+                    ),
                     T=time,
                     r=interest_rate,
                     q=dividend_rate,
@@ -345,7 +366,10 @@ class Derivative:
                 data=self.__put_price(
                     S=self.sim.S.values,
                     K=strike,
-                    sigma=self.sim.V.values * put_iv_multiplier,
+                    sigma=(
+                        self.sim.V.values * put_iv_multiplier
+                        + put_iv_offset.values
+                    ),
                     T=time,
                     r=interest_rate,
                     q=dividend_rate,

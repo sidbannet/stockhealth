@@ -551,10 +551,11 @@ class VolatilitySmile:
         max_iter: int = 100,
         alpha: float = 0.0001,
         warm_start: bool = False,
-        fit_intercept: bool = False,
+        fit_intercept: bool = True,
         tol: float = 1e-5
     ) -> None:
         """Instantiate the model object and get hubber regressor."""
+        self.current_stock = current_stock_price
         self.__huber_above_current = HuberRegressor(
             epsilon=epsilon,
             max_iter=max_iter,
@@ -563,8 +564,11 @@ class VolatilitySmile:
             fit_intercept=fit_intercept,
             tol=tol,
         ).fit(
-            X=chain_data.index[current_stock_price:] - current_stock_price,
-            y=chain_data[volatility_measure][current_stock_price:],
+            X=np.reshape(
+                chain_data[current_stock_price:].index - current_stock_price,
+                (-1, 1)
+            ),
+            y=chain_data[volatility_measure][current_stock_price:].values,
         )
         self.__huber_below_current = HuberRegressor(
             epsilon=epsilon,
@@ -574,6 +578,26 @@ class VolatilitySmile:
             fit_intercept=fit_intercept,
             tol=tol,
         ).fit(
-            X=chain_data.index[:current_stock_price] - current_stock_price,
-            y=chain_data[volatility_measure][:current_stock_price],
+            X=np.reshape(
+                chain_data[:current_stock_price].index - current_stock_price,
+                (-1, 1)
+            ),
+            y=chain_data[volatility_measure][:current_stock_price].values,
         )
+
+    @property
+    def slopes(self) -> np.array:
+        """Get the slopes of the two legs."""
+        return np.array(
+            [
+                np.append(
+                    self.__huber_below_current.coef_,
+                    0.0,
+                ).min(),
+                np.append(
+                    self.__huber_above_current.coef_,
+                    0.0,
+                ).max()
+            ],
+        )
+        self.__huber_above_current.coef_

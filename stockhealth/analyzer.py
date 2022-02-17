@@ -10,7 +10,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+import pytz
 from enum import Enum, unique
 from collections import namedtuple
 import yfinance as yf
@@ -60,16 +61,20 @@ class TimeSeries:
         )
         df['Real Worth'] = df['Close'][0] + \
             (df['Close'].diff(periods=1) + df['Dividends']).cumsum()
-        df['Real Worth'].values[0] = df['Close'].values[0]
+        df['Real Worth'].values[0] = df['Open'].values[0]
+        df__ = pd.DataFrame([])
+        df__['High'] = df['High']
+        df__['Low'] = df['Low']
+        df__['last price'] = df['Close'].shift(periods=1)
+        df__['last price'].values[0] = df['Open'].values[0]
+        df__['Real High'] = df__[['last price', 'High']].max(axis=1)
+        df__['Real Low'] = df__[['last price', 'Low']].min(axis=1)
         df['Risk free return'] = df['Real Worth'].diff(periods=1) / \
             df['Real Worth'].shift(periods=1)
         df['Risk free return'].values[0] = float(0.0)
         df['Volatility'] = (
-            df['High'] - df['Low']
-        ) / df['Real Worth'].shift(periods=1)
-        df['Volatility'].values[0] = (
-            df['High'].values[0] - df['Low'].values[0]
-        ) / df['Open'].values[0]
+            df__['Real High'] - df__['Real Low']
+        ) / df__['last price']
 
     def technical(
             self,
@@ -215,10 +220,23 @@ class TimeSeries:
         return self.__history
 
     @property
+    def current__(self) -> float:
+        """Get the latest stock price."""
+        return self.__ticker.history(
+            period='1d', interval='1m',
+        )['Close'].values[-1]
+
+    @property
     def dividend_yield(self) -> np.float:
         """Get dividend yield."""
+        date_a_year_ago = pytz.utc.localize(
+            datetime.combine(
+                date.today() - timedelta(_NCD),
+                datetime.min.time()
+            )
+        )
         return self.__ticker.dividends.loc[
-            date.today() - timedelta(_NCD):
+            date_a_year_ago:
         ].sum() / self.history__['Close'].iloc[-1]
 
     # noinspection PyUnresolvedReferences,PyPep8Naming
@@ -248,6 +266,7 @@ class TimeSeries:
                 fns_rho,
                 fns_vega,
                 fns_sigma,
+                fns_fair_market_price,
                 Ss__: np.array,
                 Ks__: np.array,
                 Ts__: np.array,
@@ -261,32 +280,87 @@ class TimeSeries:
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_delta(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             gammas_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_gamma(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             thetas_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_theta(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             rhos_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_rho(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             vegas_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, sigmas_, : fns_vega(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, sigmas_=sigmas__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             volatility_ = np.vectorize(
                 lambda Ss_, Ks_, Ts_, rs_, qs_, prices_, : fns_sigma(
                     S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, price=prices_,
                 )
-            )(Ss_=Ss__, Ks_=Ks__, Ts_=Ts__, rs_=rs__, qs_=qs__, prices_=prices__)
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                prices_=prices__,
+            )
+            fair_market_prices_ = np.vectorize(
+                lambda Ss_, Ks_, Ts_,
+                rs_, qs_, sigmas_, : fns_fair_market_price(
+                    S=Ss_, K=Ks_, T=Ts_, r=rs_, q=qs_, sigma=sigmas_,
+                )
+            )(
+                Ss_=Ss__,
+                Ks_=Ks__,
+                Ts_=Ts__,
+                rs_=rs__,
+                qs_=qs__,
+                sigmas_=sigmas__,
+            )
             return {
                 'delta': deltas_,
                 'gamma': gammas_,
@@ -294,6 +368,7 @@ class TimeSeries:
                 'rho': rhos_,
                 'vega': vegas_,
                 'sigma': volatility_,
+                'theo price': fair_market_prices_,
             }
 
         if type_of_transaction.value == 'calls':
@@ -304,6 +379,7 @@ class TimeSeries:
                 fns_vega=mdl._vega,
                 fns_rho=mdl._call_rho,
                 fns_sigma=mdl._sigma_call,
+                fns_fair_market_price=mdl._call_price,
                 Ss__=Ss, Ks__=strikes, Ts__=times,
                 rs__=rs, qs__=qs, sigmas__=sigmas,
                 prices__=prices,
@@ -316,6 +392,7 @@ class TimeSeries:
                 fns_vega=mdl._vega,
                 fns_rho=mdl._call_rho,
                 fns_sigma=mdl._sigma_call,
+                fns_fair_market_price=mdl._put_price,
                 Ss__=Ss, Ks__=strikes, Ts__=times,
                 rs__=rs, qs__=qs, sigmas__=sigmas,
                 prices__=prices,
@@ -333,10 +410,15 @@ class TimeSeries:
         chain = self.__ticker.option_chain(
             date=expiry_date.strftime('%Y-%m-%d')
         ).__getattribute__(type_of_transaction.value)
+        number_of_seconds_in_calendar = _NCD * 60 * 60 * 24
         dt = (
-            pd.to_datetime(expiry_date.strftime('%Y-%m-%d') + 'T23:59:59.00') -
-            pd.to_datetime(chain['lastTradeDate'])
-        ).astype('timedelta64[D]') / _NCD
+            pd.to_datetime(
+                expiry_date.strftime('%Y-%m-%d') + 'T23:59:59.00'
+            ).tz_localize(tz=None).to_datetime64() -
+            pd.to_datetime(chain['lastTradeDate'].values)
+        ).astype('timedelta64[s]').astype('float') / np.timedelta64(
+            number_of_seconds_in_calendar.__int__(), 's'
+        ).astype('float')
         chain['time to expiry in calendar year'] = dt.values
         if greek_on:
             greeks = self.__get_greeks(

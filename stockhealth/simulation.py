@@ -189,7 +189,7 @@ class MonteCarlosWithHeston(MonteCarlo):
             :np.datetime64(start_date)
         ]
         price = stock_history['Close'].values[-1]
-        volatility = stock_history['Volatility'].rolling(
+        volatility = stock_history['Perkinson Volatility'].rolling(
             window=number_of_days,
         ).mean()[-1] * np.sqrt(_NTD)
         roi = stock_history['Risk free return'].rolling(

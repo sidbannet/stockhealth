@@ -69,12 +69,17 @@ class TimeSeries:
         df__['last price'].values[0] = df['Open'].values[0]
         df__['Real High'] = df__[['last price', 'High']].max(axis=1)
         df__['Real Low'] = df__[['last price', 'Low']].min(axis=1)
+        df__['High over Low'] = df__['Real High'] / df__['Real Low']
         df['Risk free return'] = df['Real Worth'].diff(periods=1) / \
             df['Real Worth'].shift(periods=1)
         df['Risk free return'].values[0] = float(0.0)
         df['Volatility'] = (
             df__['Real High'] - df__['Real Low']
         ) / df__['last price']
+        func_parkins = lambda x: np.sqrt((1 / (4 * np.log(2)) * 2 * np.log(x)))  # noqa: E731,E501
+        df['Perkinson Volatility'] = df__['High over Low'].applymap(
+            func_parkins,
+        )
 
     def technical(
         self,

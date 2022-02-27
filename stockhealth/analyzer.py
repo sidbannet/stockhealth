@@ -77,7 +77,7 @@ class TimeSeries:
             df__['Real High'] - df__['Real Low']
         ) / df__['last price']
         func_parkins = lambda x: np.sqrt((1 / (4 * np.log(2)) * 2 * np.log(x)))  # noqa: E731,E501
-        df['Perkinson Volatility'] = df__['High over Low'].applymap(
+        df['Perkinson Volatility'] = df__['High over Low'].apply(
             func_parkins,
         )
 

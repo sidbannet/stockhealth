@@ -21,9 +21,9 @@ class Trends:
     """Get historical trends given a stock."""
 
     def __init__(
-            self,
-            stock: Stock = None,
-            number_of_days: np.int = int(1),
+        self,
+        stock: Stock = None,
+        number_of_days: np.int = int(1),
     ):
         """Instantiate the class."""
         self.stock = stock
@@ -62,7 +62,8 @@ class Trends:
         }
 
     def extract_model_features(
-            self,
+        self,
+        use_volatility_from_history: bool = True,
     ) -> None:
         """
         Extract Heston model features using Approximate Bayesian Computing.
@@ -71,7 +72,7 @@ class Trends:
         number_of_days = self.number_of_days
         # Get the features of stochastic mean rate of return.
         y1 = - (
-                (df['Risk free return']) * _NTD
+            (df['Risk free return']) * _NTD
         ).rolling(window=number_of_days).mean().diff(periods=-number_of_days)
         x1 = (
             (
@@ -84,19 +85,36 @@ class Trends:
         reg1 = self.__extract_regressor(x=x1, y=y1, n=number_of_days)
         std1 = np.nanstd(z1)
         # Get the features of stochastic volatility.
-        y2 = (
-            (df['Risk free return']) * _NTD
-        ).shift(periods=-number_of_days).rolling(
-            window=number_of_days).std() / (
-            (df['Risk free return']) * _NTD
-        ).rolling(window=number_of_days).std()
-        x2 = (
-            df['Risk free return'] * _NTD
-        ).rolling(window=number_of_days).std() / (
-            (df['Risk free return'] * _NTD).std()
-        )
-        z2 = (df['Risk free return'] * _NTD).rolling(
-            window=number_of_days).std()
+        if use_volatility_from_history:
+            y2 = (
+                (df['Volatility']) * np.sqrt(_NTD)
+            ).shift(periods=-number_of_days).rolling(
+                window=number_of_days
+            ).mean() / (
+                (df['Volatility']) * np.sqrt(_NTD)
+            ).rolling(window=number_of_days).mean()
+            x2 = (
+                df['Volatility'] * np.sqrt(_NTD)
+            ).rolling(window=number_of_days).mean() / (
+                df['Volatility'] * np.sqrt(_NTD)
+            ).mean()
+            z2 = (df['Volatility'] * np.sqrt(_NTD)).rolling(
+                window=number_of_days
+            ).mean()
+        else:
+            y2 = (
+                (df['Risk free return']) * _NTD
+            ).shift(periods=-number_of_days).rolling(
+                window=number_of_days).std() / (
+                (df['Risk free return']) * _NTD
+            ).rolling(window=number_of_days).std()
+            x2 = (
+                df['Risk free return'] * _NTD
+            ).rolling(window=number_of_days).std() / (
+                (df['Risk free return'] * _NTD).std()
+            )
+            z2 = (df['Risk free return'] * _NTD).rolling(
+                window=number_of_days).std()
         kde2 = self.__extract_kde(
             x=vectorized_log(x2),
             y=vectorized_log(y2),

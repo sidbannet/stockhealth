@@ -29,12 +29,12 @@ class MonteCarlo:
     """Monte Carlo simulation of spot price given a stochastic model."""
 
     def __init__(
-            self,
-            model: Model or HestonProcess = None,
-            number_of_days: np.int = np.nan,
-            steps_in_days: np.int = np.int(1),
-            stock_exchange_name: str = 'NYSE',
-            start_date: datetime = datetime.today().date(),
+        self,
+        model: Model or HestonProcess = None,
+        number_of_days: np.int = np.nan,
+        steps_in_days: np.int = np.int(1),
+        stock_exchange_name: str = 'NYSE',
+        start_date: datetime = datetime.today().date(),
     ):
         """Setup the simulation environment."""
         self._mdl = model
@@ -135,13 +135,13 @@ class MonteCarloWithTraining(MonteCarlo):
     """Sub-class of MonteCarlo which trains a model before simulations."""
 
     def __init__(
-            self,
-            trained_model: Trends = None,
-            number_of_instances: np.int = np.int(10000),
-            number_of_days: np.int = np.nan,
-            steps_in_days: np.int = np.int(1),
-            stock_exchange_name: str = 'NYSE',
-            start_date: datetime = datetime.today().date(),
+        self,
+        trained_model: Trends = None,
+        number_of_instances: np.int = np.int(10000),
+        number_of_days: np.int = np.nan,
+        steps_in_days: np.int = np.int(1),
+        stock_exchange_name: str = 'NYSE',
+        start_date: datetime = datetime.today().date(),
     ):
         """Instantiate the class."""
         stock_history = trained_model.stock.history__.loc[
@@ -174,13 +174,13 @@ class MonteCarlosWithHeston(MonteCarlo):
     """Sub-class of MonteCarlo with trained Heston process."""
 
     def __init__(
-            self,
-            trained_model: Trends,
-            number_of_instances: np.int = np.int(10000),
-            number_of_days: np.int = np.nan,
-            steps_in_days: np.int = np.int(1),
-            stock_exchange_name: str = 'NYSE',
-            start_date: datetime = datetime.today().date(),
+        self,
+        trained_model: Trends,
+        number_of_instances: np.int = np.int(10000),
+        number_of_days: np.int = np.nan,
+        steps_in_days: np.int = np.int(1),
+        stock_exchange_name: str = 'NYSE',
+        start_date: datetime = datetime.today().date(),
     ):
         """Instantiate the class."""
         historical_roi = trained_model.history['roi']
@@ -234,12 +234,12 @@ class Derivative:
 
     # noinspection PyPep8Naming,PyProtectedMember
     def __init__(
-            self,
-            option: European = None,
-            simulation_of_underlying: MonteCarlo = None,
-            call_price: np.float = np.nan,
-            put_price: np.float = np.nan,
-            vsmile: Vsmile = None,
+        self,
+        option: European = None,
+        simulation_of_underlying: MonteCarlo = None,
+        call_price: np.float = np.nan,
+        put_price: np.float = np.nan,
+        vsmile: Vsmile = None,
     ):
         """Instantiate the class."""
         self.option = option

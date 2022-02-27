@@ -45,8 +45,8 @@ class TimeSeries:
     """Time series analysis of a ticker symbol."""
 
     def __init__(
-            self,
-            ticker: str = '',
+        self,
+        ticker: str = '',
     ):
         """Instantiate the class."""
         self.__ticker = yf.Ticker(ticker)
@@ -77,15 +77,15 @@ class TimeSeries:
         ) / df__['last price']
 
     def technical(
-            self,
-            window: int = int(14),
-            key_param: str = 'Close',
-            volume_scale: str = 'log',
-            ema: bool = True,
-            adjust: bool = False,
-            short_term: int = int(9),
-            mid_term: int = int(12),
-            long_term: int = int(26),
+        self,
+        window: int = int(14),
+        key_param: str = 'Close',
+        volume_scale: str = 'log',
+        ema: bool = True,
+        adjust: bool = False,
+        short_term: int = int(9),
+        mid_term: int = int(12),
+        long_term: int = int(26),
     ) -> tuple:
         """Get the technical analysis."""
         fig = plt.figure('Technical analysis: ' + self.__symbol)
@@ -191,11 +191,11 @@ class TimeSeries:
         return rsi
 
     def macd(
-            self,
-            long_span: int = int(26),
-            mid_span: int = int(12),
-            short_span: int = int(9),
-            adjust: bool = False,
+        self,
+        long_span: int = int(26),
+        mid_span: int = int(12),
+        short_span: int = int(9),
+        adjust: bool = False,
     ) -> pd.DataFrame:
         """
         Get's MACD analysis and returns pandas DataFrame.
@@ -400,11 +400,11 @@ class TimeSeries:
         return greeks
 
     def options_chain__(
-            self,
-            expiry_date: date,
-            type_of_transaction: TransactionType,
-            interest_rate: np.float = 0.01,
-            greek_on: bool = False,
+        self,
+        expiry_date: date,
+        type_of_transaction: TransactionType,
+        interest_rate: np.float = 0.01,
+        greek_on: bool = False,
     ) -> pd.DataFrame:
         """Get options chain properties."""
         chain = self.__ticker.option_chain(

@@ -393,14 +393,14 @@ class StochasticVolatility:
     """Log-normal Stochastic Volatility Model."""
 
     def __init__(
-            self,
-            mew: np.float = np.nan,
-            S0: np.float = np.nan,
-            sigma: np.float = np.nan,
-            beta: np.float = np.nan,
-            epsilon: np.float = np.nan,
-            kappa: np.float = np.nan,
-            number_of_instances: np.int = np.int(100000),
+        self,
+        mew: np.float = np.nan,
+        S0: np.float = np.nan,
+        sigma: np.float = np.nan,
+        beta: np.float = np.nan,
+        epsilon: np.float = np.nan,
+        kappa: np.float = np.nan,
+        number_of_instances: np.int = np.int(100000),
     ):
         """Instantiate the SV Model."""
         self.S = S0 * np.ones(shape=number_of_instances)
@@ -449,18 +449,18 @@ class Heston:
     """Log-Normal Stochastic Volatility Model with mean reversion."""
 
     def __init__(
-            self,
-            S0: np.float = np.nan,
-            mew0: np.float = np.nan,
-            V0: np.float = np.nan,
-            historical_roi: np.float = np.nan,
-            historical_volatility: np.float = np.nan,
-            mean_reversion_roi: np.float = np.nan,
-            mean_reversion_log_volatility: np.float = np.nan,
-            sigma_mew: np.float = np.nan,
-            sigma_y: np.float = np.nan,
-            correlation: np.float = np.float(0),
-            number_of_instances: np.int = np.int(100000),
+        self,
+        S0: np.float = np.nan,
+        mew0: np.float = np.nan,
+        V0: np.float = np.nan,
+        historical_roi: np.float = np.nan,
+        historical_volatility: np.float = np.nan,
+        mean_reversion_roi: np.float = np.nan,
+        mean_reversion_log_volatility: np.float = np.nan,
+        sigma_mew: np.float = np.nan,
+        sigma_y: np.float = np.nan,
+        correlation: np.float = np.float(0),
+        number_of_instances: np.int = np.int(100000),
     ):
         """Instantiate the Heston Model."""
         self.S = S0 * np.ones(shape=number_of_instances)
@@ -487,8 +487,8 @@ class Heston:
         self.__volatility = V0
 
     def update(
-            self,
-            dt: np.float = np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR),
+        self,
+        dt: np.float = np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR),
     ) -> None:
         """Update states and proceed forward in time with random walks."""
         dW_mew, dW_Y = np.random.multivariate_normal(
@@ -521,11 +521,11 @@ class SimpleStochastic(StochasticVolatility):
     """
 
     def __init__(
-            self,
-            mew: np.float = np.nan,
-            S0: np.float = np.nan,
-            sigma: np.float = np.nan,
-            number_of_instances: np.int = np.int(10000),
+        self,
+        mew: np.float = np.nan,
+        S0: np.float = np.nan,
+        sigma: np.float = np.nan,
+        number_of_instances: np.int = np.int(10000),
     ):
         """Instantiate the Simple Stochastic model."""
         super().__init__(

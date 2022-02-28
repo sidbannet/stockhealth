@@ -51,8 +51,9 @@ def plot(
         facecolor='blue', alpha=0.6, interpolate=True,
     )
     df_prob[0.5].plot(ax=axs, label='median', style='-.', color='k', )
+    df_prob.mean(axis=1).plot(ax=axs, label='mean', style='.', color='k')
     axs.grid(True)
-    axs.legend(['median', '99.74 %', '95.45 %', '68.27 %'])
+    axs.legend(['99.74 %', '95.45 %', '68.27 %', 'median', 'mean'])
     axs.set_title('Confidence Interval')
     axs.set_xlabel('Time')
     fig.suptitle('Timeseries of future spot price possibility statistics')

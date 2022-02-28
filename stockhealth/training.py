@@ -15,6 +15,7 @@ from sklearn.linear_model import HuberRegressor as Regressor
 from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
 vectorized_log = np.vectorize(np.log)
+second_norm = lambda x: np.sqrt(np.mean(np.square(x)))  # noqa: E731
 
 
 class Trends:
@@ -37,6 +38,8 @@ class Trends:
             self.number_of_days = int(30)
         self.__std = data.std() * np.sqrt(_NTD)
         self.__vol = df['Volatility'].mean() * np.sqrt(_NTD)
+        self.__perkinson_vol = df[
+            'Perkinson Volatility'].mean() * np.sqrt(_NTD)
         self.__mew = data.mean() * _NTD
         self.__S = df['Close'][-1]
         self.heston_feature = None
@@ -56,6 +59,7 @@ class Trends:
         """Get historical trend data."""
         return {
             'roi': self.__mew,
+            'perkinson volatility': self.__perkinson_vol,
             'volatility': self.__vol,
             'std': self.__std,
             'latest close': self.__S,
@@ -63,7 +67,7 @@ class Trends:
 
     def extract_model_features(
         self,
-        use_volatility_from_history: bool = True,
+        use_perkinson_volatility: bool = True,
     ) -> None:
         """
         Extract Heston model features using Approximate Bayesian Computing.
@@ -85,22 +89,22 @@ class Trends:
         reg1 = self.__extract_regressor(x=x1, y=y1, n=number_of_days)
         std1 = np.nanstd(z1)
         # Get the features of stochastic volatility.
-        if use_volatility_from_history:
+        if use_perkinson_volatility:
             y2 = (
-                (df['Volatility']) * np.sqrt(_NTD)
+                (df['Perkinson Volatility']) * np.sqrt(_NTD)
             ).shift(periods=-number_of_days).rolling(
                 window=number_of_days
-            ).mean() / (
-                (df['Volatility']) * np.sqrt(_NTD)
-            ).rolling(window=number_of_days).mean()
+            ).apply(second_norm) / (
+                (df['Perkinson Volatility']) * np.sqrt(_NTD)
+            ).rolling(window=number_of_days).apply(second_norm)
             x2 = (
-                df['Volatility'] * np.sqrt(_NTD)
-            ).rolling(window=number_of_days).mean() / (
-                df['Volatility'] * np.sqrt(_NTD)
-            ).mean()
-            z2 = (df['Volatility'] * np.sqrt(_NTD)).rolling(
+                df['Perkinson Volatility'] * np.sqrt(_NTD)
+            ).rolling(window=number_of_days).apply(second_norm) / (
+                df['Perkinson Volatility'] * np.sqrt(_NTD)
+            ).apply(second_norm)
+            z2 = (df['Perkinson Volatility'] * np.sqrt(_NTD)).rolling(
                 window=number_of_days
-            ).mean()
+            ).std() / (df['Perkinson Volatility'] * np.sqrt(_NTD)).std()
         else:
             y2 = (
                 (df['Risk free return']) * _NTD
@@ -114,7 +118,8 @@ class Trends:
                 (df['Risk free return'] * _NTD).std()
             )
             z2 = (df['Risk free return'] * _NTD).rolling(
-                window=number_of_days).std()
+                window=number_of_days
+            ).std() / (df['Risk free return'] * _NTD).std()
         kde2 = self.__extract_kde(
             x=vectorized_log(x2),
             y=vectorized_log(y2),

@@ -17,6 +17,7 @@ from collections import namedtuple
 import yfinance as yf
 from stockhealth.model import BlackScholes as Bs
 from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
+from stockhealth.model import _NUMBER_OF_TRADING_DAYS_PER_YEAR as _NTD
 
 Transaction = namedtuple('forecast', ['simulation', 'amount'])
 
@@ -69,12 +70,21 @@ class TimeSeries:
         df__['last price'].values[0] = df['Open'].values[0]
         df__['Real High'] = df__[['last price', 'High']].max(axis=1)
         df__['Real Low'] = df__[['last price', 'Low']].min(axis=1)
+        df__['High over Low'] = df__['Real High'] / df__['Real Low']
         df['Risk free return'] = df['Real Worth'].diff(periods=1) / \
             df['Real Worth'].shift(periods=1)
         df['Risk free return'].values[0] = float(0.0)
         df['Volatility'] = (
             df__['Real High'] - df__['Real Low']
         ) / df__['last price']
+        func_parkins = lambda x: np.sqrt(  # noqa: E731
+            (1 / (4 * np.log(2)) * 2 * np.log(x)) / _NTD
+        )
+        df['Perkinson Volatility'] = df__['High over Low'].apply(
+            func_parkins,
+        )
+        df['Perkinson Volatility'] *= \
+            df['Risk free return'].std() / df['Perkinson Volatility'].mean()
 
     def technical(
         self,

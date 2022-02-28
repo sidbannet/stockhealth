@@ -83,6 +83,8 @@ class TimeSeries:
         df['Perkinson Volatility'] = df__['High over Low'].apply(
             func_parkins,
         )
+        df['Perkinson Volatility'] *= \
+            df['Risk free return'].std() / df['Perkinson Volatility'].mean()
 
     def technical(
         self,

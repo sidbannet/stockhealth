@@ -184,7 +184,7 @@ class MonteCarlosWithHeston(MonteCarlo):
     ):
         """Instantiate the class."""
         historical_roi = trained_model.history['roi']
-        historical_volatility = trained_model.history['std']
+        historical_volatility = trained_model.history['perkinson volatility']
         stock_history = trained_model.stock.history__.loc[
             :np.datetime64(start_date)
         ]

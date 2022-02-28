@@ -501,7 +501,7 @@ class Heston:
             self.volatility * self.S * dW
         self.mew += self.kappa_mew * (self.mew - self.mew_hat) * dt + \
             self.sigma_mew * dW_mew
-        self.Y += self.kappa_y * self.Y + self.sigma_y * dW_Y
+        self.Y += self.kappa_y * self.Y * dt + self.sigma_y * dW_Y
         self.volatility = self.__get_volatility(self.Y)
         self.t += dt
 

@@ -191,7 +191,7 @@ class MonteCarlosWithHeston(MonteCarlo):
         price = stock_history['Close'].values[-1]
         volatility = stock_history['Perkinson Volatility'].rolling(
             window=number_of_days,
-        ).mean()[-1]
+        ).mean()[-1] * np.sqrt(_NTD)
         roi = stock_history['Risk free return'].rolling(
             window=number_of_days,
         ).mean()[-1] * _NTD

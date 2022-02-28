@@ -63,7 +63,7 @@ class Trends:
 
     def extract_model_features(
         self,
-        use_volatility_from_history: bool = True,
+        use_perkinson_volatility: bool = True,
     ) -> None:
         """
         Extract Heston model features using Approximate Bayesian Computing.
@@ -85,20 +85,20 @@ class Trends:
         reg1 = self.__extract_regressor(x=x1, y=y1, n=number_of_days)
         std1 = np.nanstd(z1)
         # Get the features of stochastic volatility.
-        if use_volatility_from_history:
+        if use_perkinson_volatility:
             y2 = (
-                (df['Volatility']) * np.sqrt(_NTD)
+                (df['Perkinson Volatility']) * np.sqrt(_NTD)
             ).shift(periods=-number_of_days).rolling(
                 window=number_of_days
             ).mean() / (
-                (df['Volatility']) * np.sqrt(_NTD)
+                (df['Perkinson Volatility']) * np.sqrt(_NTD)
             ).rolling(window=number_of_days).mean()
             x2 = (
-                df['Volatility'] * np.sqrt(_NTD)
+                df['Perkinson Volatility'] * np.sqrt(_NTD)
             ).rolling(window=number_of_days).mean() / (
-                df['Volatility'] * np.sqrt(_NTD)
+                df['Perkinson Volatility'] * np.sqrt(_NTD)
             ).mean()
-            z2 = (df['Volatility'] * np.sqrt(_NTD)).rolling(
+            z2 = (df['Perkinson Volatility'] * np.sqrt(_NTD)).rolling(
                 window=number_of_days
             ).mean()
         else:

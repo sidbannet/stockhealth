@@ -102,9 +102,11 @@ class Trends:
             ).rolling(window=number_of_days).apply(second_norm) / (
                 df['Perkinson Volatility'] * np.sqrt(_NTD)
             ).apply(second_norm)
-            z2 = (df['Perkinson Volatility'] * np.sqrt(_NTD)).rolling(
-                window=number_of_days
-            ).std() / (df['Perkinson Volatility'] * np.sqrt(_NTD)).std()
+            z2 = (
+                df['Perkinson Volatility'] * np.sqrt(_NTD)
+            ) / (
+                df['Perkinson Volatility'] * np.sqrt(_NTD)
+            ).mean()
         else:
             y2 = (
                 (df['Risk free return']) * _NTD

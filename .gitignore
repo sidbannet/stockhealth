@@ -119,3 +119,4 @@ dmypy.json
 .idea/vcs.xml
 .vscode/settings.json
 .vscode/launch.json
+.DS_Store

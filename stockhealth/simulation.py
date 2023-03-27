@@ -26,7 +26,69 @@ from stockhealth.model import _NUMBER_OF_CALENDAR_DAYS_PER_YEAR as _NCD
 
 # noinspection PyPep8Naming
 class MonteCarlo:
-    """Monte Carlo simulation of spot price given a stochastic model."""
+    """
+    Monte Carlo simulation of spot price given a stochastic model.
+
+    Description
+    -----------
+    This class is used to simulate the spot price of a stock given a
+    stochastic model. The simulation is done using the Euler-Maruyama
+    scheme. The simulation is done in discrete time steps. The time
+    steps are chosen to be the same as the number of trading days in a
+    year. The simulation is done for a given number of days.
+
+    Parameters
+    ----------
+    model : Model or HestonProcess
+        The stochastic model to be used for the simulation.
+    number_of_days : int
+        The number of days for which the simulation is to be done.
+    steps_in_days : int
+        The number of steps in a day. The default is 1.
+    stock_exchange_name : str
+        The name of the stock exchange. The default is 'NYSE'.
+    start_date : datetime
+        The start date of the simulation. The default is today's date.
+
+    Attributes
+    ----------
+    S : pd.DataFrame
+        The simulated spot price.
+    V : pd.DataFrame
+        The simulated volatility.
+    t_end : float
+        The end time of the simulation.
+    dt : float
+        The time step of the simulation.
+
+    Methods
+    -------
+    solve(day_trading=False)
+        Solve the simulation.
+    plot(plot_volatility=False)
+        Plot the simulation.
+    _stat(bins=1000)
+        Get the CDF of the spot prices with time calculated.
+    _name_dataframe_index(name='t')
+        Name the dataframe index column.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from stockhealth.model import Heston
+    >>> from stockhealth.simulation import MonteCarlo
+    >>> mdl = Heston(
+    ...     S0=100, r=0.05, q=0.01, kappa=1.5, theta=0.04, sigma=0.5,
+    ...     rho=-0.75, v0=0.04, t=0, T=1,
+    ... )
+    >>> sim = MonteCarlo(
+    ...     model=mdl, number_of_days=365, steps_in_days=1,
+    ...     stock_exchange_name='NYSE', start_date=date(2021, 1, 1),
+    ... )
+    >>> sim.solve(day_trading=False)
+    >>> sim.plot(plot_volatility=False)
+    >>> sim._stat(bins=1000)
+    """
 
     def __init__(
         self,
@@ -230,6 +292,122 @@ class Derivative:
     """
     Options or derivative future predictions given an underlying
     stochastic simulation is done.
+
+    Description
+    -----------
+    This class is used to predict the price of an option or a derivative
+    future given an underlying stochastic simulation. The class is
+    instantiated with an option and a simulation of the underlying
+    asset. The class then solves for the price of the option or the
+    derivative future.
+
+    Parameters
+    ----------
+    option: European
+        The option or derivative future to be solved for.
+    simulation_of_underlying: MonteCarlo
+        The simulation of the underlying asset.
+    call_price: np.float
+        The price of the call option. If not given, the class will
+        solve for the call price.
+    put_price: np.float
+        The price of the put option. If not given, the class will
+        solve for the put price.
+    vsmile: Vsmile
+        The volatility smile of the option. If not given, the class
+        will solve for the volatility smile.
+
+    Attributes
+    ----------
+    greeks: pd.DataFrame
+        The greeks of the option.
+
+    Methods
+    -------
+    solve()
+        Solve for the option price or the volatility smile.
+    plot()
+        Plot the option price or the volatility smile.
+
+    Examples
+    --------
+    >>> from stockhealth.simulation import (
+    ...     MonteCarlo,
+    ...     HestonProcess,
+    ...     Derivative,
+    ...     European,
+    ...     Vsmile,
+    ... )
+    >>> from stockhealth.trends import Trends
+    >>> from stockhealth.stock import Stock
+    >>> from stockhealth.model import Model
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> import matplotlib.pyplot as plt
+    >>> # Create a stock object
+    >>> stock = Stock(
+    ...     ticker='AAPL',
+    ...     start_date='2010-01-01',
+    ...     end_date='2020-01-01',
+    ...     stock_exchange_name='NASDAQ',
+    ... )
+    >>> # Create a model object
+    >>> model = Model(
+    ...     mew=0.05,
+    ...     S0=stock.history__['Close'].values[-1],
+    ...     sigma=0.2,
+    ...     beta=0.5,
+    ...     kappa=0.5,
+    ...     epsilon=0.5,
+    ...     number_of_instances=10000,
+    ...     number_of_days=100,
+    ...     steps_in_days=1,
+    ...     stock_exchange_name='NASDAQ',
+    ...     start_date='2020-01-01',
+    ... )
+    >>> # Create a trends object
+    >>> trends = Trends(
+    ...     stock=stock,
+    ...     model=model,
+    ...     number_of_days=100,
+    ...     steps_in_days=1,
+    ...     stock_exchange_name='NASDAQ',
+    ...     start_date='2020-01-01',
+    ... )
+    >>> # Create a Monte Carlo object
+    >>> mc = MonteCarlo(
+    ...     model=model,
+    ...     number_of_days=100,
+    ...     steps_in_days=1,
+    ...     stock_exchange_name='NASDAQ',
+    ...     start_date='2020-01-01',
+    ... )
+    >>> # Create an option object
+    >>> option = European(
+    ...     strike=stock.history__['Close'].values[-1],
+    ...     maturity=1,
+    ...     option_type='call',
+    ...     stock_exchange_name='NASDAQ',
+    ...     start_date='2020-01-01',
+    ... )
+    >>> # Create a derivative object
+    >>> derivative = Derivative(
+    ...     option=option,
+    ...     simulation_of_underlying=mc,
+    ... )
+    >>> # Solve for the option price
+    >>> derivative.solve()
+    >>> # Plot the option price
+    >>> derivative.plot()
+    >>> # Create a volatility smile object
+    >>> vsmile = Vsmile(
+    ...     option=option,
+    ...     simulation_of_underlying=mc,
+    ... )
+    >>> # Solve for the volatility smile
+    >>> vsmile.solve()
+    >>> # Plot the volatility smile
+    >>> vsmile.plot()
     """
 
     # noinspection PyPep8Naming,PyProtectedMember

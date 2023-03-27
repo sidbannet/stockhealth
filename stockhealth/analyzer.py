@@ -43,7 +43,52 @@ class OptionsGreekType(Enum):
 
 
 class TimeSeries:
-    """Time series analysis of a ticker symbol."""
+    """
+    Time series analysis of a ticker symbol.
+
+    Description:
+    ------------
+    This class provides the time series analysis of a ticker symbol.
+
+    Parameters:
+    -----------
+    ticker: str
+        The ticker symbol of the stock.
+
+    Methods:
+    --------
+    technical(
+        window: int = int(14),
+        key_param: str = 'Close',
+        volume_scale: str = 'log',
+        ema: bool = True,
+        adjust: bool = False,
+        short_term: int = int(9),
+        mid_term: int = int(12),
+        long_term: int = int(26),
+    ) -> tuple
+        Get the technical analysis.
+    rsi(
+        periods: int = int(14),
+        ema: bool = True,
+    ) -> tuple
+        Get the relative strength index.
+    macd(
+        adjust: bool = False,
+        short_term: int = int(9),
+        mid_term: int = int(12),
+        long_term: int = int(26),
+    ) -> tuple
+        Get the moving average convergence divergence.
+
+    Examples:
+    ---------
+    >>> from stockhealth.analyzer import TimeSeries
+    >>> ts = TimeSeries('AAPL')
+    >>> ts.technical()
+    >>> ts.rsi()
+    >>> ts.macd()
+    """
 
     def __init__(
         self,
@@ -449,7 +494,53 @@ class TimeSeries:
 
 
 class Trade:
-    """Analyze expected return on trade(s)."""
+    """
+    Analyze expected return on trade(s).
+
+    Description:
+    ------------
+    This class is used to analyze the expected return on a trade or a series of
+    trades. The expected return is calculated by multiplying the forecasted
+    price of the underlying asset by the amount of the trade.
+
+    Parameters:
+    -----------
+    base_transaction: Transaction
+        The base transaction to be analyzed.
+    *args: Transaction
+        The additional transactions to be analyzed.
+
+    Attributes:
+    -----------
+    price: float
+        The expected return on the trade(s).
+
+    Methods:
+    --------
+    None
+
+    Examples:
+    ---------
+    >>> from stockhealth.analyzer import Trade
+    >>> from stockhealth.analyzer import Transaction
+    >>>
+    >>> trade = Trade(
+    ...     base_transaction=Transaction(
+    ...         amount=100, # Buy 100 shares of an underlying asset
+    ...         simulation=Simulation(
+    ...             forecast=100, # Forecasted price of underlying asset is $100  # noqa: E501
+    ...         ),
+    ...     ),
+    ...     Transaction(
+    ...         amount=-100, # Sell 100 shares of underlying asset
+    ...         simulation=Simulation(
+    ...             forecast=100, # Forecasted price of underlying asset is $100  # noqa: E501
+    ...         ),
+    ...     ),
+    ... )
+    >>> trade.price
+    20000.0
+    """
 
     def __init__(
             self,

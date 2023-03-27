@@ -19,7 +19,53 @@ second_norm = lambda x: np.sqrt(np.mean(np.square(x)))  # noqa: E731
 
 
 class Trends:
-    """Get historical trends given a stock."""
+    """
+    Get historical trends given a stock.
+
+    Description
+    -----------
+    This class is used to get historical trends of a stock. It is used to
+    extract features for the Heston model.
+
+    Parameters
+    ----------
+    stock: Stock
+        The stock to get the historical trends of.
+    number_of_days: int
+        The number of days to use to get the historical trends. If not
+        specified, the default is 30 days.
+
+    Attributes
+    ----------
+    stock: Stock
+        The stock to get the historical trends of.
+    number_of_days: int
+        The number of days to use to get the historical trends.
+    history: dict
+        The historical trends of the stock.
+
+    Methods
+    -------
+    extract_model_features(use_perkinson_volatility: bool = True)
+        Extract Heston model features using Approximate Bayesian Computing.
+
+    Examples
+    --------
+    >>> from stockhealth.analyzer import TimeSeries as Stock
+    >>> from stockhealth.training import Trends
+    >>> stock = Stock('AAPL')
+    >>> trends = Trends(stock=stock)
+    >>> trends.history
+    {'roi': 0.0001, 'perkinson volatility': 0.0001, 'volatility': 0.0001,
+    'std': 0.0001, 'latest close': 0.0001}
+    >>> trends.extract_model_features()
+    >>> trends.heston_feature
+    {'kde1': <scipy.stats.kde.gaussian_kde object at 0x7f8b1c0b8a90>,
+    'kde2': <scipy.stats.kde.gaussian_kde object at 0x7f8b1c0b8a90>,
+    'reg1': <sklearn.linear_model._huber.HuberRegressor object at 0x7f8b1c0b8a90>, # noqa: E501
+    'reg2': <sklearn.linear_model._huber.HuberRegressor object at 0x7f8b1c0b8a90>, # noqa: E501
+    'std1': 0.0001, 'std2': 0.0001, 'correlation': 0.0001}
+    """
 
     def __init__(
         self,

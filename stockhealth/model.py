@@ -17,7 +17,73 @@ _NUMBER_OF_CALENDAR_DAYS_PER_YEAR: float = 365.2425
 
 # noinspection PyPep8Naming,PyUnresolvedReferences
 class BlackScholes:
-    """Black-Scholes model to determine fair European options price."""
+    """
+    Black-Scholes model to determine fair European options price
+    and greeks.
+
+    Description:
+    ------------
+    The Black-Scholes model is a mathematical model for a financial
+    market containing derivative investment instruments. It was
+    developed by Fisher Black and Myron Scholes in 1973, extending
+    on the work of Louis Bachelier in 1900. The model is used to
+    determine the theoretical value of European call and put options.
+    The model is based on the assumption that asset prices follow
+    a geometric Brownian motion, and that the risk-neutral probability
+    is the continuously compounded risk-free interest rate. The
+    Black-Scholes model is a partial differential equation (PDE)
+    that describes the price of the option over time. The Black-Scholes
+    model is a special case of the Black-Scholes-Merton model, which
+    also includes a dividend yield.
+
+    References:
+    -----------
+    [1] https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model
+    [2] https://www.investopedia.com/terms/b/blackscholes.asp
+    [3] https://www.investopedia.com/terms/b/blackscholes-merton-model.asp
+
+    Parameters:
+    -----------
+    S: float
+        Current stock price.
+    K: float
+        Strike price.
+    T: float
+        Time to maturity in years.
+    r: float
+        Risk-free interest rate.
+    q: float
+        Dividend yield.
+    sigma: float
+        Volatility.
+
+    Methods:
+    --------
+    _call_price: float
+        European Call option price given sigma, time and interest rate.
+    _put_price: float
+        European Put option price given sigma, time and interest rate.
+    _call_delta: float
+        Call delta given sigma, time and interest rate.
+    _put_delta: float
+        Put delta given sigma, time and interest rate.
+    _call_theta: float
+        Call theta given sigma, time and interest rate.
+    _put_theta: float
+        Put theta given sigma, time and interest rate.
+    _call_gamma: float
+        Call gamma given sigma, time and interest rate.
+    _put_gamma: float
+        Put gamma given sigma, time and interest rate.
+    _call_vega: float
+        Call vega given sigma, time and interest rate.
+    _put_vega: float
+        Put vega given sigma, time and interest rate.
+    _call_rho: float
+        Call rho given sigma, time and interest rate.
+    _put_rho: float
+        Put rho given sigma, time and interest rate.
+    """
 
     @staticmethod
     def __f1(
@@ -390,7 +456,97 @@ class European(BlackScholes):
 
 # noinspection PyPep8Naming
 class StochasticVolatility:
-    """Log-normal Stochastic Volatility Model."""
+    """
+    Log-normal Stochastic Volatility Model.
+
+    Description:
+    ------------
+    The stochastic volatility model is a model of the dynamics of the
+    volatility of a stochastic process. The model is a generalization of
+    the Black-Scholes model, which assumes that the volatility is constant.
+    The stochastic volatility model assumes that the volatility is a
+    stochastic process, and that the dynamics of the volatility are
+    described by a stochastic differential equation.
+
+    The stochastic volatility model is a generalization of the Black-Scholes
+    model, which assumes that the volatility is constant. The stochastic
+    volatility model assumes that the volatility is a stochastic process,
+    and that the dynamics of the volatility are described by a stochastic
+    differential equation.
+
+    References:
+    -----------
+    [1] https://en.wikipedia.org/wiki/Stochastic_volatility
+    [2] https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model
+    [3] https://en.wikipedia.org/wiki/Stochastic_differential_equation
+    [4] https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model
+
+    Parameters:
+    -----------
+    mew : float
+        The mean reversion speed of the volatility.
+    S0 : float
+        The initial stock price.
+    sigma : float
+        The initial volatility.
+    beta : float
+        The speed of mean reversion of the volatility.
+    epsilon : float
+        The volatility of the volatility.
+    kappa : float
+        The mean reversion speed of the mean.
+    number_of_instances : int
+        The number of instances to simulate.
+
+    Attributes:
+    -----------
+    S : np.array
+        The stock price.
+    mew : np.float
+        The mean reversion speed of the volatility.
+    sigma : np.float
+        The initial volatility.
+    beta : np.float
+        The speed of mean reversion of the volatility.
+    epsilon : np.float
+        The volatility of the volatility.
+    kappa : np.float
+        The mean reversion speed of the mean.
+    Y : np.array
+        The volatility.
+    t : np.float
+        The time.
+
+    Methods:
+    --------
+    update()
+        Update the model.
+    reset()
+        Reset the model.
+
+    Properties:
+    -----------
+    volatility : np.array
+        The volatility.
+
+    Examples:
+    ---------
+    >>> import numpy as np
+    >>> from stockhealth.model import StochasticVolatility as SV
+    >>> model = SV(
+    ...     mew=0.1,
+    ...     S0=100,
+    ...     sigma=0.2,
+    ...     beta=0.8,
+    ...     epsilon=0.1,
+    ...     kappa=0.1,
+    ...     number_of_instances=100000,
+    ... )
+    >>> model.update()
+    >>> model.volatility
+    array([0.2, 0.2, 0.2, ..., 0.19999999, 0.19999999, 0.19999999])
+    >>> model.reset()
+    """
 
     def __init__(
         self,
@@ -446,7 +602,97 @@ class StochasticVolatility:
 
 # noinspection PyPep8Naming
 class Heston:
-    """Log-Normal Stochastic Volatility Model with mean reversion."""
+    """
+    Log-Normal Stochastic Volatility Model with mean reversion.
+
+    Description:
+    ------------
+    The Heston model is a stochastic volatility model, which is a
+    generalization
+    of the Black-Scholes model, which assumes that the volatility is constant.
+    The Heston model assumes that the volatility is a stochastic process,
+    and that the dynamics of the volatility are described by a stochastic
+    differential equation.
+
+    References:
+    -----------
+    [1] https://en.wikipedia.org/wiki/Stochastic_volatility
+    [2] https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model
+    [3] https://en.wikipedia.org/wiki/Stochastic_differential_equation
+    [4] https://en.wikipedia.org/wiki/Heston_model
+
+    Parameters:
+    -----------
+    S0 : float
+        The initial stock price.
+    mew0 : float
+        The initial mean reversion speed of the volatility.
+    V0 : float
+        The initial volatility.
+    historical_roi : float
+        The historical return on investment.
+    historical_volatility : float
+        The historical volatility.
+    mean_reversion_roi : float
+        The mean reversion speed of the return on investment.
+    mean_reversion_log_volatility : float
+        The mean reversion speed of the log volatility.
+    sigma_mew : float
+        The volatility of the mean reversion speed of the volatility.
+    sigma_y : float
+        The volatility of the volatility.
+    correlation : float
+        The correlation between the return on investment and the volatility.
+    number_of_instances : int
+        The number of instances to simulate.
+
+    Attributes:
+    -----------
+    S : np.array
+        The stock price.
+    volatility : np.array
+        The volatility.
+    mew : np.array
+        The mean reversion speed of the volatility.
+    t : np.float
+        The time.
+
+    Methods:
+    --------
+    update()
+        Update the model.
+    reset()
+        Reset the model.
+
+    Properties:
+    -----------
+    volatility : np.array
+        The volatility.
+
+    Examples:
+    ---------
+    >>> import numpy as np
+    >>> from stockhealth.model import Heston
+    >>> model = Heston(
+    ...     S0=100,
+    ...     mew0=0.1,
+    ...     V0=0.2,
+    ...     historical_roi=0.1,
+    ...     historical_volatility=0.2,
+    ...     mean_reversion_roi=0.1,
+    ...     mean_reversion_log_volatility=0.1,
+    ...     sigma_mew=0.1,
+    ...     sigma_y=0.1,
+    ...     correlation=0.1,
+    ...     number_of_instances=100000,
+    ... )
+    >>> model.update()
+    >>> model.volatility
+    array([0.2, 0.2, 0.2, ..., 0.2])
+    >>> model.S
+    array([100., 100., 100., ..., 100.])
+    >>> model.reset()
+    """
 
     def __init__(
         self,
@@ -518,6 +764,60 @@ class Heston:
 class SimpleStochastic(StochasticVolatility):
     """
     Stochastic log-normal time dynamics model with constant volatility.
+
+    Description:
+    ------------
+    This class is used to simulate the stock price of an underlying asset
+    using a stochastic log-normal time dynamics model with constant
+    volatility. The model is used to simulate the stock price of an underlying
+    asset using the following equation:
+
+    .. math::
+        S_{t+\\Delta t} = S_{t} \\exp \\left( \\left( \\mu - \\frac{1}{2}
+        \\sigma^{2} \\right) \\Delta t + \\sigma \\sqrt{\\Delta t} Z \\right)
+
+    where :math:`\\mu` is the expected return, :math:`\\sigma` is the
+    volatility, and :math:`Z` is a standard normal random variable.
+
+    Attributes:
+    -----------
+    S: np.array
+        The simulated stock price of the underlying asset.
+    mew: np.array
+        The expected return of the underlying asset.
+    volatility: np.array
+        The volatility of the underlying asset.
+    t: np.float
+        The current time of the model.
+
+    Methods:
+    --------
+    update(dt: np.float = np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR)) -> None:  # noqa: E501
+        Update states and proceed forward in time with random walks.
+    reset() -> None:
+        Reset model states to t=0.
+
+    Examples:
+    ---------
+    >>> import numpy as np
+    >>> from stockhealth.model import SimpleStochastic
+    >>> from stockhealth.constants import _NUMBER_OF_TRADING_DAYS_PER_YEAR
+    >>> model = SimpleStochastic(
+    ...     mew=np.float(0.05), S0=np.float(100), sigma=np.float(0.2)),
+    ...     number_of_instances=np.int(10000),
+    ... )
+    >>> model.update(dt=np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR))
+    >>> model.S
+    array([99.99999999, 100.00000001, 100.00000001, ..., 99.99999999, 100.00000001])
+    >>> model.mew
+    array([0.05, 0.05, 0.05, ..., 0.05, 0.05, 0.05])
+    >>> model.volatility
+    array([0.2, 0.2, 0.2, ..., 0.2, 0.2, 0.2])
+    >>> model.t
+    0.0027397260273972603
+    >>> model.reset()
+    >>> model.S
+    array([100., 100., 100., ..., 100., 100., 100.])
     """
 
     def __init__(
@@ -540,7 +840,45 @@ class SimpleStochastic(StochasticVolatility):
 
 
 class VolatilitySmile:
-    """Train a volatility smile model and obtain Huber regressor."""
+    """
+    Train a volatility smile model and obtain Huber regressor.
+
+    Description:
+    ------------
+    This class is used to train a volatility smile model and obtain a Huber
+    regressor. The model is trained using the historical data of the
+    underlying asset. The model is then used to predict the volatility of the
+    underlying asset for a given strike price.
+
+    Attributes:
+    -----------
+    current_stock: float
+        The current price of the underlying asset.
+
+    Examples:
+    ---------
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> from sklearn.linear_model import HuberRegressor
+    >>> from stockhealth.model import VolatilitySmile
+    >>> chain_data = pd.DataFrame(
+    ...     data={
+    ...         'strikePrice': np.arange(50, 150, 10),
+    ...         'impliedVolatility': np.arange(0.1, 0.2, 0.01)
+    ...     }
+    ... )
+    >>> model = VolatilitySmile(
+    ...     chain_data=chain_data,
+    ...     current_stock_price=100,
+    ...     volatility_measure='impliedVolatility',
+    ...     epsilon=1.35,
+    ...     max_iter=100,
+    ...     alpha=0.0001,
+    ...     warm_start=False,
+    ...     fit_intercept=True,
+    ...     tol=1e-5,
+    ... )
+    """
 
     def __init__(
         self,

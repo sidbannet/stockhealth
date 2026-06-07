@@ -93,15 +93,15 @@ class MonteCarlo:
     def __init__(
         self,
         model: Model or HestonProcess = None,
-        number_of_days: np.int = np.nan,
-        steps_in_days: np.int = np.int(1),
+        number_of_days: int = np.nan,
+        steps_in_days: int = int(1),
         stock_exchange_name: str = 'NYSE',
         start_date: datetime = datetime.today().date(),
     ):
         """Setup the simulation environment."""
         self._mdl = model
-        self.t_end = np.float(number_of_days / _NTD)
-        self.dt = np.float(steps_in_days / _NTD)
+        self.t_end = float(number_of_days / _NTD)
+        self.dt = float(steps_in_days / _NTD)
         self.__steps_in_days = steps_in_days
         self.__solved = False
         self.__start_date = start_date
@@ -199,9 +199,9 @@ class MonteCarloWithTraining(MonteCarlo):
     def __init__(
         self,
         trained_model: Trends = None,
-        number_of_instances: np.int = np.int(10000),
-        number_of_days: np.int = np.nan,
-        steps_in_days: np.int = np.int(1),
+        number_of_instances: int = int(10000),
+        number_of_days: int = np.nan,
+        steps_in_days: int = int(1),
         stock_exchange_name: str = 'NYSE',
         start_date: datetime = datetime.today().date(),
     ):
@@ -212,9 +212,9 @@ class MonteCarloWithTraining(MonteCarlo):
         mew = trained_model.history['roi']
         price = stock_history['Close'].values[-1]
         sigma = trained_model.history['std']
-        beta = np.float(0)
-        kappa = np.float(0)
-        epsilon = np.float(0)
+        beta = float(0)
+        kappa = float(0)
+        epsilon = float(0)
         super().__init__(
             model=Model(
                 mew=mew,
@@ -238,9 +238,9 @@ class MonteCarlosWithHeston(MonteCarlo):
     def __init__(
         self,
         trained_model: Trends,
-        number_of_instances: np.int = np.int(10000),
-        number_of_days: np.int = np.nan,
-        steps_in_days: np.int = np.int(1),
+        number_of_instances: int = int(10000),
+        number_of_days: int = np.nan,
+        steps_in_days: int = int(1),
         stock_exchange_name: str = 'NYSE',
         start_date: datetime = datetime.today().date(),
     ):
@@ -307,10 +307,10 @@ class Derivative:
         The option or derivative future to be solved for.
     simulation_of_underlying: MonteCarlo
         The simulation of the underlying asset.
-    call_price: np.float
+    call_price: float
         The price of the call option. If not given, the class will
         solve for the call price.
-    put_price: np.float
+    put_price: float
         The price of the put option. If not given, the class will
         solve for the put price.
     vsmile: Vsmile
@@ -415,8 +415,8 @@ class Derivative:
         self,
         option: European = None,
         simulation_of_underlying: MonteCarlo = None,
-        call_price: np.float = np.nan,
-        put_price: np.float = np.nan,
+        call_price: float = np.nan,
+        put_price: float = np.nan,
         vsmile: Vsmile = None,
     ):
         """Instantiate the class."""

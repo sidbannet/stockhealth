@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockHealth Trade Analyzer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>Options Strategy Builder</h1>
+            <p>Advanced Quantitative Modeling & Forecasting</p>
+        </header>
+        
+        <main>
+            <!-- Engine Loading State -->
+            <div id="loading" class="glass-card loading-state">
+                <div class="spinner"></div>
+                <p id="loading-text">Initializing Quantitative Engine...</p>
+            </div>
+
+            <div id="dashboard" class="hidden">
+                
+                <!-- Step 1: Asset Selection -->
+                <div class="glass-card section">
+                    <h2>1. Select Asset</h2>
+                    <div class="search-bar">
+                        <input type="text" id="ticker" value="SPY" placeholder="Ticker (e.g. SPY)">
+                        <button id="search-btn" class="primary-btn">Fetch Expirations</button>
+                    </div>
+                    <div id="asset-error" class="error-msg hidden"></div>
+                </div>
+
+                <!-- Step 2: Expirations -->
+                <div id="expirations-section" class="glass-card section hidden">
+                    <h2>2. Select Expiration</h2>
+                    <div id="expiration-pills" class="expiration-pills-container">
+                        <!-- Pills injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Step 3: Options Chain (T-Quote) -->
+                <div id="chain-section" class="glass-card section hidden">
+                    <div class="chain-header">
+                        <h2>3. Build Strategy</h2>
+                        <span id="spot-price-badge" class="badge">--</span>
+                    </div>
+                    <p class="instruction">Click Bid to Sell (Short), Ask to Buy (Long)</p>
+                    
+                    <div class="table-scroll-container">
+                        <table class="t-quote-table" id="options-chain-table">
+                            <thead>
+                                <tr>
+                                    <th colspan="3" class="calls-header">CALLS</th>
+                                    <th class="strike-header">STRIKE</th>
+                                    <th colspan="3" class="puts-header">PUTS</th>
+                                </tr>
+                                <tr class="sub-headers">
+                                    <th>Vol</th>
+                                    <th>Bid</th>
+                                    <th>Ask</th>
+                                    <th></th>
+                                    <th>Bid</th>
+                                    <th>Ask</th>
+                                    <th>Vol</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chain-body">
+                                <!-- Rows injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Simulation Results -->
+                <div id="results-section" class="glass-card section hidden">
+                    <h2>Simulation Results</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <h3 id="metric-return">--</h3>
+                            <span>Expected Return</span>
+                        </div>
+                        <div class="metric-box">
+                            <h3 id="metric-roi">--</h3>
+                            <span>Expected ROI</span>
+                        </div>
+                    </div>
+                    <div id="plot-container" class="plot-container"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Sticky Strategy Tray -->
+    <div id="strategy-tray" class="strategy-tray hidden">
+        <div class="tray-content">
+            <div class="tray-info">
+                <h3 id="strategy-name">Custom Spread</h3>
+                <div class="net-credit-debit" id="net-cost">Net: $0.00</div>
+            </div>
+            <div id="legs-container" class="legs-container">
+                <!-- Legs injected via JS -->
+            </div>
+            <div class="tray-actions">
+                <div class="input-group-small">
+                    <label for="forecast-days">Simulate Days</label>
+                    <input type="number" id="forecast-days" value="30" min="1" max="365">
+                </div>
+                <button id="run-sim-btn" class="primary-btn pulse">Run Simulation</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

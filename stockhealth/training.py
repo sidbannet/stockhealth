@@ -70,7 +70,7 @@ class Trends:
     def __init__(
         self,
         stock: Stock = None,
-        number_of_days: np.int = int(1),
+        number_of_days: int = int(1),
     ):
         """Instantiate the class."""
         self.stock = stock
@@ -96,9 +96,9 @@ class Trends:
         kde2: gaussian_kde
         reg1: object
         reg2: object
-        std1: np.float
-        std2: np.float
-        correlation: np.float
+        std1: float
+        std2: float
+        correlation: float
 
     @property
     def history(self) -> dict:

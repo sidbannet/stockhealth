@@ -1,0 +1,436 @@
+:root {
+    --bg-color: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --text-color: #f8fafc;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --accent: #8b5cf6;
+    --border: rgba(255, 255, 255, 0.1);
+    --itm-call-bg: rgba(59, 130, 246, 0.15);
+    --itm-put-bg: rgba(139, 92, 246, 0.15);
+    --buy-green: #10b981;
+    --sell-red: #ef4444;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Background Gradients */
+.background-blobs {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+}
+
+.blob-1 {
+    top: -10%; left: -10%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+}
+
+.blob-2 {
+    bottom: -10%; right: -10%;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    padding-bottom: 120px; /* Space for sticky tray */
+}
+
+header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(to right, #60a5fa, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+header p {
+    color: #94a3b8;
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.section {
+    margin-bottom: 2rem;
+}
+
+.section h2 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    color: #cbd5e1;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Step 1: Search */
+.search-bar {
+    display: flex;
+    gap: 1rem;
+}
+
+input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: white;
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+    border-color: var(--primary);
+}
+
+.primary-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+
+.primary-btn:hover {
+    background: var(--primary-hover);
+}
+
+.primary-btn:active {
+    transform: scale(0.98);
+}
+
+.error-msg {
+    color: var(--sell-red);
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Step 2: Expiration Pills */
+.expiration-pills-container {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+}
+
+.expiration-pills-container::-webkit-scrollbar {
+    height: 6px;
+}
+.expiration-pills-container::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.pill {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--border);
+    padding: 0.6rem 1.2rem;
+    border-radius: 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.pill:hover {
+    border-color: var(--primary);
+}
+
+.pill.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.pill .dte {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    margin-left: 0.4rem;
+}
+.pill.active .dte {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Step 3: T-Quote Table */
+.chain-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.chain-header h2 { margin-bottom: 0; }
+
+.badge {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.3rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.instruction {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.table-scroll-container {
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.t-quote-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.t-quote-table th, .t-quote-table td {
+    padding: 0.6rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.t-quote-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    z-index: 10;
+}
+
+.t-quote-table th {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.calls-header { text-align: center; border-right: 1px solid var(--border); }
+.puts-header { text-align: center; border-left: 1px solid var(--border); }
+.strike-header { text-align: center; color: white !important; font-weight: 600 !important; background: rgba(255,255,255,0.05); }
+
+.sub-headers th {
+    border-bottom: 2px solid var(--border);
+}
+
+/* Table Cells */
+.t-quote-table td {
+    font-size: 0.9rem;
+}
+
+.strike-col {
+    text-align: center;
+    font-weight: 600;
+    background: rgba(255,255,255,0.05);
+    color: white;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+}
+
+.itm-call { background-color: var(--itm-call-bg); }
+.itm-put { background-color: var(--itm-put-bg); }
+
+/* Spot Price Divider */
+.spot-divider td {
+    padding: 0;
+    height: 2px;
+    background: var(--primary);
+    border: none;
+}
+
+/* Clickable Legs */
+.clickable {
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+.clickable:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.leg-selected-buy {
+    background-color: rgba(16, 185, 129, 0.3) !important;
+    color: #34d399;
+    font-weight: 600;
+}
+.leg-selected-sell {
+    background-color: rgba(239, 68, 68, 0.3) !important;
+    color: #f87171;
+    font-weight: 600;
+}
+
+/* Sticky Strategy Tray */
+.strategy-tray {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(15, 23, 42, 0.95);
+    border-top: 1px solid var(--border);
+    padding: 1rem 2rem;
+    backdrop-filter: blur(20px);
+    z-index: 100;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    transform: translateY(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.strategy-tray.hidden {
+    transform: translateY(100%);
+    display: block !important; /* Override the normal hidden to use transform instead */
+}
+
+.tray-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.tray-info h3 {
+    margin-bottom: 0.2rem;
+    font-size: 1.1rem;
+}
+.net-credit-debit {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+.net-credit { color: var(--buy-green); }
+.net-debit { color: var(--sell-red); }
+
+.legs-container {
+    flex-grow: 1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.leg-tag {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.leg-tag.buy { border-left: 3px solid var(--buy-green); }
+.leg-tag.sell { border-left: 3px solid var(--sell-red); }
+
+.leg-tag .remove {
+    cursor: pointer;
+    opacity: 0.6;
+}
+.leg-tag .remove:hover { opacity: 1; color: white; }
+
+.tray-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.input-group-small {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.input-group-small label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+.input-group-small input {
+    width: 80px;
+    padding: 0.4rem;
+}
+
+/* Loading State */
+.loading-state {
+    text-align: center;
+    padding: 4rem;
+}
+
+.spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--primary);
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Metrics & Charts */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+.metric-box {
+    background: rgba(15, 23, 42, 0.6);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+.metric-box h3 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: white;
+}
+.metric-box span { color: #94a3b8; font-size: 0.9rem; }
+.plot-container { width: 100%; height: 400px; }

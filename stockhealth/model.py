@@ -87,13 +87,13 @@ class BlackScholes:
 
     @staticmethod
     def __f1(
-        sigmas: np.float,
-        Ss: np.float,
-        Ks: np.float,
-        Ts: np.float,
-        rs: np.float,
-        qs: np.float,
-    ) -> np.float:
+        sigmas: float,
+        Ss: float,
+        Ks: float,
+        Ts: float,
+        rs: float,
+        qs: float,
+    ) -> float:
         return (
             (
                 np.log(Ss / Ks) +
@@ -103,13 +103,13 @@ class BlackScholes:
 
     @staticmethod
     def __f2(
-        sigmas: np.float,
-        Ss: np.float,
-        Ks: np.float,
-        Ts: np.float,
-        rs: np.float,
-        qs: np.float
-    ) -> np.float:
+        sigmas: float,
+        Ss: float,
+        Ks: float,
+        Ts: float,
+        rs: float,
+        qs: float
+    ) -> float:
         return (
             (
                 np.log(Ss / Ks) +
@@ -119,13 +119,13 @@ class BlackScholes:
 
     def _call_price(
         self,
-        S: np.float = np.nan,
-        T: np.float = np.nan,
-        K: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = 0.0,
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        T: float = np.nan,
+        K: float = np.nan,
+        r: float = np.nan,
+        q: float = 0.0,
+        sigma: float = np.nan,
+    ) -> float:
         """European Call option price given sigma, time and interest rate."""
         return (
             S * norm.cdf(
@@ -138,13 +138,13 @@ class BlackScholes:
 
     def _put_price(
         self,
-        S: np.float = np.nan,
-        T: np.float = np.nan,
-        K: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        T: float = np.nan,
+        K: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        sigma: float = np.nan,
+    ) -> float:
         """European Put option price given sigma, time and interest rate."""
         return (
             np.exp(-r * T) * K * norm.cdf(
@@ -156,13 +156,13 @@ class BlackScholes:
 
     def _call_delta(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        sigma: float = np.nan,
+    ) -> float:
         """Get call delta."""
         return norm.cdf(
             self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
@@ -170,13 +170,13 @@ class BlackScholes:
 
     def _call_theta(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        sigma: float = np.nan,
+    ) -> float:
         """Get call theta."""
         return (
             - np.exp(
@@ -194,13 +194,13 @@ class BlackScholes:
 
     def _call_rho(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        sigma: float = np.nan,
+    ) -> float:
         """Get call rho."""
         return (
             K * T * np.exp(
@@ -210,13 +210,13 @@ class BlackScholes:
 
     def _put_delta(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        sigma: float = np.nan,
+    ) -> float:
         """Get put delta."""
         return - norm.cdf(
             -self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
@@ -224,13 +224,13 @@ class BlackScholes:
 
     def _put_theta(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        sigma: float = np.nan,
+    ) -> float:
         """Get put theta."""
         return (
             - np.exp(
@@ -252,13 +252,13 @@ class BlackScholes:
 
     def _put_rho(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        sigma: float = np.nan,
+    ) -> float:
         """Get put rho."""
         return (
             -K * T * np.exp(
@@ -270,13 +270,13 @@ class BlackScholes:
 
     def _gamma(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        sigma: float = np.nan,
+    ) -> float:
         """Get gamma."""
         return norm.pdf(
             self.__f1(sigmas=sigma, Ss=S, Ks=K, Ts=T, rs=r, qs=q)
@@ -284,13 +284,13 @@ class BlackScholes:
 
     def _vega(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        sigma: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        sigma: float = np.nan,
+    ) -> float:
         """Get vega."""
         return (
             S * norm.pdf(
@@ -300,13 +300,13 @@ class BlackScholes:
 
     def _sigma_call(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        price: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        price: float = np.nan,
+    ) -> float:
         """Implied sigma given call option value."""
         sigma_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
         return sigma_[
@@ -321,13 +321,13 @@ class BlackScholes:
 
     def _sigma_put(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
-        price: np.float = np.nan,
-    ) -> np.float:
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
+        price: float = np.nan,
+    ) -> float:
         """Implied sigma given put option value."""
         sigma_ = np.linspace(start=0.001, stop=5.0, num=5000, endpoint=True)
         return sigma_[
@@ -347,11 +347,11 @@ class European(BlackScholes):
 
     def __init__(
         self,
-        S: np.float = np.nan,
-        K: np.float = np.nan,
-        T: np.float = np.nan,
-        r: np.float = np.nan,
-        q: np.float = np.float(0.0),
+        S: float = np.nan,
+        K: float = np.nan,
+        T: float = np.nan,
+        r: float = np.nan,
+        q: float = float(0.0),
     ):
         """Instantiate the Black-Scholes model for options price.
         :type S: Spot price of the underlying asset
@@ -401,7 +401,7 @@ class European(BlackScholes):
 
     def _value(
         self,
-        sigma: np.float = np.nan,
+        sigma: float = np.nan,
     ) -> dict:
         """Given sigma, the fair market value."""
         __call_value = self._call_value(sigma=sigma)
@@ -443,8 +443,8 @@ class European(BlackScholes):
 
     def greeks(
         self,
-        call_price: np.float = np.nan,
-        put_price: np.float = np.nan,
+        call_price: float = np.nan,
+        put_price: float = np.nan,
     ) -> dict:
         """Get sigmas and calculate greeks for given options price."""
         return {
@@ -502,19 +502,19 @@ class StochasticVolatility:
     -----------
     S : np.array
         The stock price.
-    mew : np.float
+    mew : float
         The mean reversion speed of the volatility.
-    sigma : np.float
+    sigma : float
         The initial volatility.
-    beta : np.float
+    beta : float
         The speed of mean reversion of the volatility.
-    epsilon : np.float
+    epsilon : float
         The volatility of the volatility.
-    kappa : np.float
+    kappa : float
         The mean reversion speed of the mean.
     Y : np.array
         The volatility.
-    t : np.float
+    t : float
         The time.
 
     Methods:
@@ -550,13 +550,13 @@ class StochasticVolatility:
 
     def __init__(
         self,
-        mew: np.float = np.nan,
-        S0: np.float = np.nan,
-        sigma: np.float = np.nan,
-        beta: np.float = np.nan,
-        epsilon: np.float = np.nan,
-        kappa: np.float = np.nan,
-        number_of_instances: np.int = np.int(100000),
+        mew: float = np.nan,
+        S0: float = np.nan,
+        sigma: float = np.nan,
+        beta: float = np.nan,
+        epsilon: float = np.nan,
+        kappa: float = np.nan,
+        number_of_instances: int = int(100000),
     ):
         """Instantiate the SV Model."""
         self.S = S0 * np.ones(shape=number_of_instances)
@@ -565,15 +565,15 @@ class StochasticVolatility:
         self.beta = beta / sigma
         self.epsilon = epsilon / sigma
         self.kappa = kappa
-        self.Y = np.float(0) + np.zeros(shape=number_of_instances)
-        self.t = np.float(0)
+        self.Y = float(0) + np.zeros(shape=number_of_instances)
+        self.t = float(0)
         self.__N = number_of_instances
         self.__S0 = S0
         # //todo: assert if the model is setup correctly
 
     def update(
             self,
-            dt: np.float = np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR),
+            dt: float = float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR),
     ) -> None:
         """Update states and proceed forward in time with random walk."""
         dW = [
@@ -592,12 +592,12 @@ class StochasticVolatility:
         """Reset model states to t=0."""
         self.S = self.__S0 * np.ones_like(self.S)
         self.Y = np.zeros_like(self.Y)
-        self.t = np.float(0)
+        self.t = float(0)
 
     @property
     def volatility(self) -> np.array:
         """Give stock price volatility state."""
-        return (self.Y + np.float(1)) * self.sigma
+        return (self.Y + float(1)) * self.sigma
 
 
 # noinspection PyPep8Naming
@@ -654,7 +654,7 @@ class Heston:
         The volatility.
     mew : np.array
         The mean reversion speed of the volatility.
-    t : np.float
+    t : float
         The time.
 
     Methods:
@@ -696,17 +696,17 @@ class Heston:
 
     def __init__(
         self,
-        S0: np.float = np.nan,
-        mew0: np.float = np.nan,
-        V0: np.float = np.nan,
-        historical_roi: np.float = np.nan,
-        historical_volatility: np.float = np.nan,
-        mean_reversion_roi: np.float = np.nan,
-        mean_reversion_log_volatility: np.float = np.nan,
-        sigma_mew: np.float = np.nan,
-        sigma_y: np.float = np.nan,
-        correlation: np.float = np.float(0),
-        number_of_instances: np.int = np.int(100000),
+        S0: float = np.nan,
+        mew0: float = np.nan,
+        V0: float = np.nan,
+        historical_roi: float = np.nan,
+        historical_volatility: float = np.nan,
+        mean_reversion_roi: float = np.nan,
+        mean_reversion_log_volatility: float = np.nan,
+        sigma_mew: float = np.nan,
+        sigma_y: float = np.nan,
+        correlation: float = float(0),
+        number_of_instances: int = int(100000),
     ):
         """Instantiate the Heston Model."""
         self.S = S0 * np.ones(shape=number_of_instances)
@@ -727,14 +727,14 @@ class Heston:
             lambda Y: historical_volatility * np.exp(Y)
         )
         self.Y = self.__get_Y(self.volatility)
-        self.t = np.float(0)
+        self.t = float(0)
         self.__S = S0
         self.__mew = mew0
         self.__volatility = V0
 
     def update(
         self,
-        dt: np.float = np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR),
+        dt: float = float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR),
     ) -> None:
         """Update states and proceed forward in time with random walks."""
         dW_mew, dW_Y = np.random.multivariate_normal(
@@ -787,12 +787,12 @@ class SimpleStochastic(StochasticVolatility):
         The expected return of the underlying asset.
     volatility: np.array
         The volatility of the underlying asset.
-    t: np.float
+    t: float
         The current time of the model.
 
     Methods:
     --------
-    update(dt: np.float = np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR)) -> None:  # noqa: E501
+    update(dt: float = float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR)) -> None:  # noqa: E501
         Update states and proceed forward in time with random walks.
     reset() -> None:
         Reset model states to t=0.
@@ -803,10 +803,10 @@ class SimpleStochastic(StochasticVolatility):
     >>> from stockhealth.model import SimpleStochastic
     >>> from stockhealth.constants import _NUMBER_OF_TRADING_DAYS_PER_YEAR
     >>> model = SimpleStochastic(
-    ...     mew=np.float(0.05), S0=np.float(100), sigma=np.float(0.2)),
-    ...     number_of_instances=np.int(10000),
+    ...     mew=float(0.05), S0=float(100), sigma=float(0.2)),
+    ...     number_of_instances=int(10000),
     ... )
-    >>> model.update(dt=np.float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR))
+    >>> model.update(dt=float(1 / _NUMBER_OF_TRADING_DAYS_PER_YEAR))
     >>> model.S
     array([99.99999999, 100.00000001, 100.00000001, ..., 99.99999999, 100.00000001])
     >>> model.mew
@@ -822,10 +822,10 @@ class SimpleStochastic(StochasticVolatility):
 
     def __init__(
         self,
-        mew: np.float = np.nan,
-        S0: np.float = np.nan,
-        sigma: np.float = np.nan,
-        number_of_instances: np.int = np.int(10000),
+        mew: float = np.nan,
+        S0: float = np.nan,
+        sigma: float = np.nan,
+        number_of_instances: int = int(10000),
     ):
         """Instantiate the Simple Stochastic model."""
         super().__init__(

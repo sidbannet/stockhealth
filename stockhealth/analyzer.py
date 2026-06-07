@@ -282,7 +282,7 @@ class TimeSeries:
         )['Close'].values[-1]
 
     @property
-    def dividend_yield(self) -> np.float:
+    def dividend_yield(self) -> float:
         """Get dividend yield."""
         date_a_year_ago = pytz.utc.localize(
             datetime.combine(
@@ -302,9 +302,9 @@ class TimeSeries:
         prices: np.array,
         strikes: np.array,
         sigmas: np.array,
-        S: np.float,
-        r: np.float,
-        q: np.float = 0.0,
+        S: float,
+        r: float,
+        q: float = 0.0,
     ) -> dict:
         """Get greeks from the options chain."""
         mdl = Bs()
@@ -458,7 +458,7 @@ class TimeSeries:
         self,
         expiry_date: date,
         type_of_transaction: TransactionType,
-        interest_rate: np.float = 0.01,
+        interest_rate: float = 0.01,
         greek_on: bool = False,
     ) -> pd.DataFrame:
         """Get options chain properties."""

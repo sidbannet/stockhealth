@@ -25,12 +25,12 @@ class Price:
         @classmethod
         def wrapper(
             cls,
-            S: np.float,
-            K: np.float,
-            T: np.float,
-            r: np.float,
-            q: np.float,
-            sigma: np.float,
+            S: float,
+            K: float,
+            T: float,
+            r: float,
+            q: float,
+            sigma: float,
         ):
             """Wrapper function that decorates the function."""
             return self.operator(

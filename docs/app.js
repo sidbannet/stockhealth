@@ -49,13 +49,20 @@ await micropip.install(['exchange-calendars', 'pandas_market_calendars', 'yfinan
             # Add CORS proxy to bypass browser restrictions
             import requests
             import urllib.parse
+            from requests.models import PreparedRequest
             _orig_get = requests.Session.get
             
             WORKER_URL = 'https://yfinance-proxy.sidban.workers.dev/?url='
             
             def _proxied_get(self, url, **kwargs):
                 if url.startswith('https://query') or url.startswith('https://finance'):
-                    proxy_url = WORKER_URL + urllib.parse.quote(url)
+                    req = PreparedRequest()
+                    req.prepare_url(url, kwargs.get('params', {}))
+                    proxy_url = WORKER_URL + urllib.parse.quote(req.url)
+                    
+                    if 'params' in kwargs:
+                        del kwargs['params']
+                        
                     return _orig_get(self, proxy_url, **kwargs)
                 return _orig_get(self, url, **kwargs)
             requests.Session.get = _proxied_get

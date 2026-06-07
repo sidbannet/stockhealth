@@ -67,6 +67,16 @@ await micropip.install(['exchange-calendars', 'pandas_market_calendars', 'yfinan
                 return _orig_get(self, url, **kwargs)
             requests.Session.get = _proxied_get
             requests.get = lambda url, **kwargs: requests.Session().get(url, **kwargs)
+            
+            # Monkey-patch yfinance to prevent Pyodide session validation errors
+            import yfinance as yf
+            import yfinance.data
+            def patched_set_session(self, session):
+                if session is None: return
+                self._session_is_caching = False
+                with self._cookie_lock:
+                    self._session = session
+            yfinance.data.YfData._set_session = patched_set_session
 
             from stockhealth.analyzer import TimeSeries, Trade
             from stockhealth.simulation import MonteCarlosWithHeston

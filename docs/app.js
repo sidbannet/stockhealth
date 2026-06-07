@@ -186,7 +186,8 @@ async function handleSearch() {
             renderExpirations(data.options);
         }
     } catch (err) {
-        errorEl.innerText = "Error fetching data. Check ticker symbol.";
+        console.error("Data Fetch Error:", err);
+        errorEl.innerText = "Error fetching data. Check ticker symbol. See console for details.";
         errorEl.classList.remove('hidden');
     }
     
